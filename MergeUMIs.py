@@ -88,14 +88,14 @@ def determine_consensus(name, fasta, fastq, temp_folder):
     header_fh = open(header_log, 'a+')
     headers = []
     for read in reads:
-        info = read.split('_')
+        info = read.split('_') #splits a string into a list using '_' character as the break, so if string is 'test_1.txt' string.split('_') will create a list ['test', '1.txt'] 
         # print(info)
         coverage = int(info[3])
         headers.append(info[0])
         qual.append(float(info[1]))
         raw.append(int(info[2]))
         repeats += int(info[3])
-        before.append(int(info[4]))
+        before.append(int(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"
         after.append(int(info[5].split('|')[0]))
 
         if coverage >= max_coverage:
