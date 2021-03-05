@@ -33,7 +33,7 @@ def configReader(configIn): #configIn is our config file where each line has the
         line = line.rstrip().split('\t') #splits each line by tab, creating a new list called "line" that has the name at index 0 and path at index 1
         progs[line[0]] = line[1] #appends new value to empty progs dictionary where the key is the program name, and the value stored under the key is the path like {'poa':'/usr/bin/poaV2/poa'}
         #Now we have a progs dictionary where the path to each program is stored under the program name
-    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'blat','emtrey', 'psl2pslx']) #creates set of possible program names
+    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'blat','emtrey', 'psl2pslx']) #creates set of possible program names; do I need emtrey and psl2pslx?
     inConfig = set() #creates an empty set called inConfig
     for key in progs.keys(): #for each program name in the config file, add the program name to inConfig set
         inConfig.add(key)
