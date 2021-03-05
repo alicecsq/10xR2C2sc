@@ -24,36 +24,35 @@ config_file= args.config_file
 score_matrix = args.score_matrix
 subsample = 200
 
-def configReader(configIn):
+def configReader(configIn): #configIn is our config file where each line has the name of the program, a tab separation, and the path to the executable
     '''Parses the config file.'''
-    progs = {}
-    for line in open(configIn):
+    progs = {} #defines progs as an empty dictionary
+    for line in open(configIn): #for each line in the config file
         if line.startswith('#') or not line.rstrip().split():
             continue
-        line = line.rstrip().split('\t')
-        progs[line[0]] = line[1]
-    # should have minimap, poa, racon, water, consensus
-    # check for extra programs that shouldn't be there
-    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'blat','emtrey', 'psl2pslx'])
-    inConfig = set()
-    for key in progs.keys():
+        line = line.rstrip().split('\t') #splits each line by tab, creating a new list called "line" that has the name at index 0 and path at index 1
+        progs[line[0]] = line[1] #appends new value to empty progs dictionary where the key is the program name, and the value stored under the key is the path like {'poa':'/usr/bin/poaV2/poa'}
+        #Now we have a progs dictionary where the path to each program is stored under the program name
+    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'blat','emtrey', 'psl2pslx']) #creates set of possible program names
+    inConfig = set() #creates an empty set called inConfig
+    for key in progs.keys(): #for each program name in the config file, add the program name to inConfig set
         inConfig.add(key)
-        if key not in possible:
+        if key not in possible: #if the program name from the program file is not in the listof possible programs, raise exception
             raise Exception('Check config file')
     # check for missing programs
     # if missing, default to path
-    for missing in possible-inConfig:
-        if missing == 'consensus':
-            path = 'consensus.py'
+    for missing in possible-inConfig: #create a list that is the subtraction of programs in the config file from possible programs, for each of the elements in this list...
+        if missing == 'consensus': #if the program that is missing from inConfig is the consensus program...
+            path = 'consensus.py' #the path is just the local consensus.py file
         else:
-            path = missing
-        progs[missing] = path
+            path = missing #otherwise path is equal to the name of the missing program 
+        progs[missing] = path 
         sys.stderr.write('Using ' + str(missing)
                          + ' from your path, not the config file.\n')
     return progs
 
 progs = configReader(config_file)
-poa = progs['poa']
+poa = progs['poa'] # for an empty config file, the key 'poa' doesn't store the path, it just stores the name 'poa'. Which is fine because it's already an executable, you can just type 'poa' into the terminal and it works.
 minimap2 = progs['minimap2']
 racon = progs['racon']
 consensus = progs['consensus']
@@ -62,7 +61,7 @@ def determine_consensus(name, fasta, fastq, temp_folder):
     '''Aligns and returns the consensus'''
     corrected_consensus = ''
     out_F = fasta
-    fastq_reads = read_fastq_file(fastq, False)
+    fastq_reads = read_fastq_file(fastq, False) #read_fastq_file function determined futher down; it's inputs are (seq file, and check). Here seq file is the 
     out_Fq = temp_folder + '/subsampled.fastq'
     out = open(out_Fq, 'w')
     indexes = np.random.choice(np.arange(0, len(fastq_reads), 1), min(len(fastq_reads), subsample), replace=False)
