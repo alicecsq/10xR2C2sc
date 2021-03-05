@@ -56,6 +56,7 @@ poa = progs['poa'] # for an empty config file, the key 'poa' doesn't store the p
 minimap2 = progs['minimap2']
 racon = progs['racon']
 consensus = progs['consensus']
+#looks like the only programs needed are the consensus.py script, poa-biopipeline, minimap2 and racon (I got emtrey but can't find psl2pslx anywhere)
 
 def determine_consensus(name, fasta, fastq, temp_folder):
     '''Aligns and returns the consensus'''
