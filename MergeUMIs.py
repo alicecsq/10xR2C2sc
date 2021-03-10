@@ -58,23 +58,29 @@ racon = progs['racon']
 consensus = progs['consensus']
 #looks like the only programs needed are the consensus.py script, poa-biopipeline, minimap2 and racon (I got emtrey but can't find psl2pslx anywhere)
 
-def determine_consensus(name, fasta, fastq, temp_folder):
-    '''Aligns and returns the consensus'''
-    corrected_consensus = ''
-    out_F = fasta
-    fastq_reads = read_fastq_file(fastq, False) #read_fastq_file function determined futher down; it's inputs are (seq file, and check). Here seq file is the 
-    out_Fq = temp_folder + '/subsampled.fastq'
-    out = open(out_Fq, 'w')
-    indexes = np.random.choice(np.arange(0, len(fastq_reads), 1), min(len(fastq_reads), subsample), replace=False)
+def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'determine_consensus' with four arguments 
+    '''Aligns and returns the consensus''' #so if alignment occurs does it need minimap2? Presumably this is the same alignment and consensus strategy that C3POa uses but the C3POa aligner is conk...
+    corrected_consensus = '' #defines corrected_consensus variable as an empty string
+    out_F = fasta #out_F is the fasta argument input
+    fastq_reads = read_fastq_file(fastq, False) #read_fastq_file function determined futher down; it's inputs are (seq file, and check).  
+    out_Fq = temp_folder + '/subsampled.fastq' #out_Fq is the temp_folder input/subsampled.fastq (this creates a directory to store the out fq)
+    out = open(out_Fq, 'w') #write out to the /subsampled.fastq file defined above
+    indexes = np.random.choice(np.arange(0, len(fastq_reads), 1), min(len(fastq_reads), subsample), replace=False) #uses NumPy function np.random.choice 
+    #np.arange takes arguments in (start, stop, step) form and returns an array with evenly-spaced values. Here the start value is 0, the stop value is the length of the fastq_reads file (so maybe how many reads?), and 1 is the interval
+    #then np.random.choice takes the following inputs (a, size, replace, p) where a is an array (in this case it is the np.arange array), size is the size of the returned random sample
+    #here that is the smallest of the two values: fastq_reads length or subsample (defined as 200 above), and replace=False (still don't really know what this means)
+    
+    #Basically this is saying give me 200 random values between 0 and the total number of reads in the fastq, these values are then the positions of 200 random reads in the fastq input file that will be used for the rest of this function
 
-    subsample_fastq_reads = []
-    for index in indexes:
-        subsample_fastq_reads.append(fastq_reads[index])
-
-    for read in subsample_fastq_reads:
-        out.write('@' + read[0] + '\n' + read[1] + '\n+\n' + read[2] + '\n')
-    out.close()
-
+    subsample_fastq_reads = [] #define subasmple_fastq_reads as an empty list
+    for index in indexes: #for each value in indexes (that list of 200 random numbers)...
+        subsample_fastq_reads.append(fastq_reads[index]) #add the random read at that position in the fastq file to this empty subsample_fastq_reads list
+    #At the end of this 'for' loop we now have a populated list of 200 randomly-selected reads from our fastq file
+    for read in subsample_fastq_reads: #now for each of these randomly-selected reads, write out to our fastq_out directory...
+        out.write('@' + read[0] + '\n' + read[1] + '\n+\n' + read[2] + '\n') #write out @ (the start of the first line for a fastq) plus the read at position [0] which would be the name??
+    out.close()                                                              #then the read sequence [1] then the scores [2]??? Need to investigate what this actually makes...
+#at the end of all this you have a temporary fastq file named 'subsampled.fastq' that should have 200 randomly selected reads from your input fastq
+    
     poa_cons = temp_folder + '/consensus.fasta'
     final = temp_folder + '/corrected_consensus.fasta'
     overlap = temp_folder + '/overlaps.sam'
