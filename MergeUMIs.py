@@ -4,7 +4,7 @@ import editdistance
 import numpy as np
 import os
 import sys
-import mappy as mm
+import mappy as mm #mappy is an interface for minimap2, importing as mm
 from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
@@ -62,7 +62,7 @@ consensus = progs['consensus']
 def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'determine_consensus' with four arguments 
     '''Aligns and returns the consensus''' #so if alignment occurs does it need minimap2? Presumably this is the same alignment and consensus strategy that C3POa uses but the C3POa aligner is conk...
     corrected_consensus = '' #defines corrected_consensus variable as an empty string
-    out_F = fasta #out_F is the fasta argument input
+    out_F = fasta #out_F is the fasta argument input  
     fastq_reads = read_fastq_file(fastq, False) #read_fastq_file function determined futher down; it's inputs are (seq file, and check).  
     out_Fq = temp_folder + '/subsampled.fastq' #out_Fq is the temp_folder input/subsampled.fastq (this creates a directory to store the out fq)
     out = open(out_Fq, 'w') #write out to the /subsampled.fastq file defined above
@@ -82,13 +82,13 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
     out.close()                                                              #then the read sequence [1] then the scores [2]??? Need to investigate what this actually makes...
 #at the end of all this you have a temporary fastq file named 'subsampled.fastq' that should have 200 randomly selected reads from your input fastq
     
-    poa_cons = temp_folder + '/consensus.fasta'
-    final = temp_folder + '/corrected_consensus.fasta'
-    overlap = temp_folder + '/overlaps.sam'
-    pairwise = temp_folder + '/prelim_consensus.fasta'
+    poa_cons = temp_folder + '/consensus.fasta' #defines poa_cons as a consensus.fasta file in the output path
+    final = temp_folder + '/corrected_consensus.fasta' #defines final as a corrected_consensus.fasta file in the output path
+    overlap = temp_folder + '/overlaps.sam' #defines overlap as a overlaps.sam file in the output path
+    pairwise = temp_folder + '/prelim_consensus.fasta' #defines pairwise as a prelim_consensus.fasta file in the output path
 
-    max_coverage, repeats = 0, 0
-    reads = read_fasta(out_F)
+    max_coverage, repeats = 0, 0 #assigns two variables at once, max_coverage=0 and repeats=0
+    reads = read_fasta(out_F) #defines variable reads as the PRODUCT of the read_fasta function operated on out_F (the input fasta, as defined earlier)
     qual, raw, before, after = [], [], [], []
 
     header_log = path + 'header_associations.tsv'
@@ -143,13 +143,14 @@ def read_subreads(seq_file, chrom_reads):
             chrom_reads[root_name].append(read) # read = (header, seq, qual)
     return chrom_reads
 
-def read_fasta(infile):
-    reads = {}
-    for read in mm.fastx_read(infile, read_comment=False):
+def read_fasta(infile): #defining read_fasta (this function is called in the define_consensus function) 
+    reads = {} #generates empty dictionary called 'reads'
+    for read in mm.fastx_read(infile, read_comment=False): #mm. (similar to np. syntax) denotes a mappy function; here mm.fastx_read with read_comment=False generates a (name, seq, qual) tuple for each sequence entry
+        #tuples are used to store multiple items in one variable and they are indexed
         reads[read[0]] = read[1]
     return reads
 
-def read_fastq_file(seq_file, check):
+def read_fastq_file(seq_file, check): #defining the read_fastq_file with two arguments (seq_file, check)
     '''
     Takes a FASTQ file and returns a list of tuples
     In each tuple:
@@ -188,7 +189,8 @@ def make_consensus(Molecule, UMI_number, subreads):
     subs.close()
     fasta.close()
     if read_fastq_file(subread_file, True):
-        corrected_consensus, repeats, name, qual, raw, before, after = determine_consensus(str(UMI_number), fastaread_file, subread_file, path)
+        corrected_consensus, repeats, name, qual, raw, before, after = determine_consensus(str(UMI_number), fastaread_file, subread_file, path) #it's the determine_consensus function from earlier! This function takes the following inputs (name, fasta, fastq, temp_folder)
+        #so here the determine_consensus function is being operated on the following inputs, name=UMI_number (even tho name is never actually called in the original function), fastaread_file (which is defined above), subread_file (defined above), and the path
         return '>%s_%s_%s_%s_%s_%s|%s\n%s\n' %(name, str(qual), str(raw), str(repeats), str(before), str(after), str(UMI_number), corrected_consensus)
     else:
         return ''
