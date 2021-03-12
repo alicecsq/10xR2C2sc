@@ -88,21 +88,24 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
     pairwise = temp_folder + '/prelim_consensus.fasta' #defines pairwise as a prelim_consensus.fasta file in the output path
 
     max_coverage, repeats = 0, 0 #assigns two variables at once, max_coverage=0 and repeats=0
-    reads = read_fasta(out_F) #defines variable reads as the PRODUCT of the read_fasta function operated on out_F (the input fasta, as defined earlier)
-    qual, raw, before, after = [], [], [], []
+    reads = read_fasta(out_F) #defines variable 'reads' as the PRODUCT of the read_fasta function operated on out_F (the input fasta to the determine_consensus function)
+    qual, raw, before, after = [], [], [], [] #defines four empty list variables qual, raw, before, after
 
-    header_log = path + 'header_associations.tsv'
-    header_fh = open(header_log, 'a+')
-    headers = []
-    for read in reads:
-        info = read.split('_') #splits a string into a list using '_' character as the break, so if string is 'test_1.txt' string.split('_') will create a list ['test', '1.txt'] 
-        # print(info)
-        coverage = int(info[3])
-        headers.append(info[0])
-        qual.append(float(info[1]))
-        raw.append(int(info[2]))
-        repeats += int(info[3])
-        before.append(int(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"
+    header_log = path + 'header_associations.tsv' #creates a new log file called header_associations.tsv
+    header_fh = open(header_log, 'a+') #open header log file and APPEND (as opposed to 'write' which will add to the beginning of the file, append will add to the end)
+    headers = [] #create empty list called 'headers'
+    for read in reads: #the out_F file is defined as the fasta that is input into the determine_consensus function, when the determine_consensus function is actually called in
+                       #the make_consensus function, the given fasta is something called 'temp_consensus_reads.fasta'; if I look at the structure of that file, the names that are
+                       #being referred to by read are structured: 'f11ac981-9408-4643-9b65-a250b0232be2_21.57_30141_25_1284|10'
+        info = read.split('_') #splits a string into a list using '_' character as the break, so for the aforementioned name it would be readName_averageQuality_originalReadLength_numberOfRepeats_subreadLength
+        coverage = int(info[3]) #coverage is info at index 3, which is 'Number of Repeats'
+        headers.append(info[0]) #headers is info at index 0, which is 'Read Name'
+        qual.append(float(info[1])) #qual is the decimal value of info at index 1, which is "Average Quality"
+        raw.append(int(info[2])) #raw is the integer value of info at index 2, which is "Original Read Length"
+        repeats += int(info[3]) #repeats is the integer value of info at index 3, which is "Number of Repeats" now ADDED to the variable 'repeats' defined outside the loop as 0
+        before.append(int(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"--this is where the error is coming from, the last '_' delimited
+                                    #item in the read name '1284|10' so either they messed up or this is not the right fasta file...
+                                    #the R2C2_Consensus and R2C2_Subreads files generated from C3POa don't have the |10 on the end...
         after.append(int(info[5].split('|')[0]))
 
         if coverage >= max_coverage:
@@ -147,7 +150,7 @@ def read_fasta(infile): #defining read_fasta (this function is called in the def
     reads = {} #generates empty dictionary called 'reads'
     for read in mm.fastx_read(infile, read_comment=False): #mm. (similar to np. syntax) denotes a mappy function; here mm.fastx_read with read_comment=False generates a (name, seq, qual) tuple for each sequence entry
         #tuples are used to store multiple items in one variable and they are indexed
-        reads[read[0]] = read[1]
+        reads[read[0]] = read[1] #creates a dictionary calleds 'reads' where the sequence is stored under the name of the sequence 
     return reads
 
 def read_fastq_file(seq_file, check): #defining the read_fastq_file with two arguments (seq_file, check)
