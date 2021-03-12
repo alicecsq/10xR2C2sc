@@ -106,13 +106,15 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
         before.append(int(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"--this is where the error is coming from, the last '_' delimited
                                     #item in the read name '1284|10' so either they messed up or this is not the right fasta file...
                                     #the R2C2_Consensus and R2C2_Subreads files generated from C3POa don't have the |10 on the end...
-        after.append(int(info[5].split('|')[0]))
+                                    #'before' is the empty list created earlier in the function; but info[4] is int|10, python thinks we are trying to do a bitwise operation
+        after.append(int(info[5].split('|')[0])) #'after' is the empty list created earlier; info[5] shouldn't exist but it is clear that this was written with the int|10 value in mind
+                                                 #am I putting the wrong fasta in here? 
 
-        if coverage >= max_coverage:
-            best = read
-            max_coverage = coverage
+        if coverage >= max_coverage: #max_coverage was defined as 0, coverage is the number of repeats 
+            best = read #if coverage is greater than 0 then 'best' is the name of the read
+            max_coverage = coverage #max_coverage becomes the number of repeats
 
-    print('\t'.join(headers), file=header_fh)
+    print('\t'.join(headers), file=header_fh) #prin
     header_fh.close()
 
     out_cons_file = open(poa_cons, 'w')
@@ -177,13 +179,13 @@ def read_fastq_file(seq_file, check): #defining the read_fastq_file with two arg
         read_list.append((read[0], seq, qual, avg_q, s_len))
     return read_list
 
-def make_consensus(Molecule, UMI_number, subreads):
-    subread_file = path + '/temp_subreads.fastq'
-    fastaread_file = path + '/temp_consensus_reads.fasta'
-    subs = open(subread_file, 'w')
-    fasta = open(fastaread_file, 'w')
-    for read in Molecule:
-        fasta.write(read)
+def make_consensus(Molecule, UMI_number, subreads): #define make_consensus function with input arguments (Molecule, UMI_number, subreads)
+    subread_file = path + '/temp_subreads.fastq' #creates subread_file 'temp_subreads.fastq'
+    fastaread_file = path + '/temp_consensus_reads.fasta' #creates fastaread_file 'temp_consensus_reads.fasta'
+    subs = open(subread_file, 'w') #open subread_file (temp_subreads.fastq) and write to the beginning of the file
+    fasta = open(fastaread_file, 'w') #open fastaread_file (temp_consensus_reads.fasta) and write to the beginning of the file
+    for read in Molecule: #make_consensus function is called later in the group_reads function (Molecule variable is defined there); 
+        fasta.write(read) 
         # print(read)
         root_name = read[1:].split('_')[0]
         raw = subreads[root_name] # [(header, seq, qual), ...], includes rootname_subread_n
@@ -198,13 +200,14 @@ def make_consensus(Molecule, UMI_number, subreads):
     else:
         return ''
 
-def parse_reads(reads, sub_reads, UMIs):
-    group_dict, chrom_reads= {}, {}
-    groups = []
-    UMI_group, previous_start, previous_end = 0, 0, 0
-    for name, group_number in sub_reads.items():
-        root_name = name.split('_')[0]
-        UMI5 = UMIs[name][0]
+def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inputs (reads, sub_reads, UMIs) 
+    group_dict, chrom_reads= {}, {} #defining variables group_dict and chrom_reads as empty dictionaries
+    groups = [] #defining groups as an empty set
+    UMI_group, previous_start, previous_end = 0, 0, 0 #setting the variables UMI_group, previous_start, and previous_end as 0
+    for name, group_number in sub_reads.items(): #the .items() function in python returns the key:value pairs in a dictionary, so the sub_reads input is likely a dictionary
+                                                 #where name is the key and group_number is the value
+        root_name = name.split('_')[0] #root_name equals the read name split by '_' and the 0 index position (probably will be just the name (not the qual scores, etc))
+        UMI5 = UMIs[name][0] #what is the UMIs input? 
         UMI3 = UMIs[name][1]
         if root_name not in chrom_reads:
             chrom_reads[root_name] = []
@@ -216,10 +219,10 @@ def parse_reads(reads, sub_reads, UMIs):
         groups.append(list(set(group)))
     return groups, chrom_reads
 
-def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads):
-    UMI_group = 0
+def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads): #define function group_reads with inputs (groups, reads, subreads UMIs, final, final_UMI_only, matched_reads)
+    UMI_group = 0 #set variable UMI_group equal to 0 
     # print(len(groups))
-    for group in groups:
+    for group in groups: #group_reads function used later, where groups input is 
         group = list(set(group))
         UMI_dict = {}
         set_dict = {}
@@ -295,14 +298,14 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
                 read_list.append(('>%s|%s\n%s\n' % (group[i][0], str(UMI_number), group[i][3]), UMI_number, group[i][1], group[i][2]))
 
             previous_UMI = ''
-            Molecule = set()
+            Molecule = set() #defines Molecule as an empty set 
             for read, UMI_number, umi5, umi3 in sorted(read_list, key=lambda x:int(x[1])):
                 matched_reads.write(str(UMI_number) + '\t' + read.split('|')[0] + '\t' + umi5 + '\t' + umi3 + '\n')
                 if UMI_number != previous_UMI:
                     if len(Molecule) == 1:
                         final.write(list(Molecule)[0])
                     elif len(Molecule) > 1:
-                        new_read = make_consensus(list(Molecule), previous_UMI, subreads)
+                        new_read = make_consensus(list(Molecule), previous_UMI, subreads) #make_consensus function defined earlier is called here
                         if not new_read:
                             continue
                         final.write(new_read)
@@ -331,19 +334,19 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
             final.write('>%s|%s\n%s\n' % (group[0][0], str(UMI_group), group[0][3]))
     # print(group_counter)
 
-def read_UMIs(UMI_file):
-    UMI_dict, group_dict, kmer_dict = {}, {}, {}
-    group_number = 0
-    for line in open(UMI_file):
-        a = line.strip('\n').split('\t')
-        name, UMI5, UMI3 = a[0], a[1], a[2]
-        kmer_list = ['', '', '', '']
+def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' script with the umi_file input 
+    UMI_dict, group_dict, kmer_dict = {}, {}, {} #setting variables UMI_dict, group_dict, kmer_dict as empty dictionaries
+    group_number = 0 #sets variable group_number as 0
+    for line in open(UMI_file): #for each line in the UMI file, again organized as 'name'\t'UMI5'\t'UMI3'...
+        a = line.strip('\n').split('\t') #remove spaces at beginning and end of each line and split line by tabs
+        name, UMI5, UMI3 = a[0], a[1], a[2] #name and UMI5 and UMI3 are now defined correctly by their position on each line
+        kmer_list = ['', '', '', ''] #defining variable kmer_list as an empty list with four indix positions
 
-        UMI_dict[name] = (UMI5, UMI3)
-        if UMI5[5:10] == 'TATAT':
+        UMI_dict[name] = (UMI5, UMI3) #populate the UMI dictionary; the name of the read is the key and the UMI5 and the UMI3 values are stored under it
+        if UMI5[5:10] == 'TATAT': #if the middle of UMI5 is TATAT
             kmer_list[0] = UMI5[:5]
             kmer_list[1] = UMI5[10:]
-        if UMI3[5:10] == 'ATATA':
+        if UMI3[5:10] == 'ATATA': #if the middle of UMI3 is ATATA
             kmer_list[2] = UMI3[:5]
             kmer_list[3] = UMI3[10:]
 
@@ -379,11 +382,12 @@ def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_re
     group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads)
 
 def main():
-    final = open(path + '/R2C2_full_length_consensus_reads_UMI_merged.fasta', 'w')
+    final = open(path + '/R2C2_full_length_consensus_reads_UMI_merged.fasta', 'w') #final is 
     final_UMI_only = open(path + '/R2C2_full_length_consensus_reads_UMI_only.fasta', 'w')
     matched_reads = open(path + '/matched_reads.txt', 'w')
     print('kmer-matching UMIs')
-    groups, UMIs = read_UMIs(umi_file)
+    groups, UMIs = read_UMIs(umi_file) #umi_file is the tab-delimited file we created with ExtractUMIs.py; name\tUMI5\tUMI3
+                                       #
     print('reading consensus reads')
     reads = read_fasta(fasta_file)
     count = 0
