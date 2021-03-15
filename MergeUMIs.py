@@ -343,12 +343,12 @@ def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' scr
         kmer_list = ['', '', '', ''] #defining variable kmer_list as an empty list with four indix positions
 
         UMI_dict[name] = (UMI5, UMI3) #populate the UMI dictionary; the name of the read is the key and the UMI5 and the UMI3 values are stored under it
-        if UMI5[5:10] == 'TATAT': #if the middle of UMI5 is TATAT
-            kmer_list[0] = UMI5[:5]
-            kmer_list[1] = UMI5[10:]
-        if UMI3[5:10] == 'ATATA': #if the middle of UMI3 is ATATA
-            kmer_list[2] = UMI3[:5]
-            kmer_list[3] = UMI3[10:]
+        if UMI5[5:10] == 'TATAT': #if the middle of UMI5 is TATAT...
+            kmer_list[0] = UMI5[:5] #kmer_list at position 0 is the UMI5 sequence from 0 to 5 (NNNNN) first random pentamer barcode sequence
+            kmer_list[1] = UMI5[10:] #kmer_list at position 1 is the UMI5 sequence from 10 onward (NNNNN) second random pentamer barcode sequence
+        if UMI3[5:10] == 'ATATA': #if the middle of UMI3 is ATATA (which we have confirmed will NOT happen with a UMI5 that is TATAT, because they are both on the same strand...)
+            kmer_list[2] = UMI3[:5] #kmer_list at position 2 is the first random pentamer barcode sequence of UMI3
+            kmer_list[3] = UMI3[10:] #kmer_list at position 3 is the second random pentamer barcode sequence of UMI3
 
         combination_list = []
         for x in range(4):
