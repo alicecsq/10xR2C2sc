@@ -357,23 +357,25 @@ def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' scr
                 second_kmer = kmer_list[y]
                 if first_kmer != '' and second_kmer != '':
                     combination = '_' * x+first_kmer + '_' * (y-x)+second_kmer + '_' * (3-y)
-                    combination_list.append(combination)
+                    combination_list.append(combination) #combination list is a coded list that represents the relationship between the four kmers in kmer list 
         match = ''
-        for combination in combination_list:
-            if combination in kmer_dict:
+        for combination in combination_list: #for each of the combinations in the combination list...
+            if combination in kmer_dict: #if the combination is in the kmer_dict...kmer_dict is an empty dictionary so this will not be true for the first combination
                 match = kmer_dict[combination]
-                for combination1 in combination_list:
+                for combination1 in combination_list: 
                     kmer_dict[combination1] = match
                 break
-        if match == '':
-            group_number += 1
-            group_dict[group_number] = []
-            match = group_number
-            for combination in combination_list:
-                kmer_dict[combination] = match
-        group_dict[match].append(name)
+        if match == '': #match will be empty for the first pass of the 'for' loop
+            group_number += 1 #group number for the first pass will be 1 (it is defined outside of the loop as 0
+            group_dict[group_number] = [] #the group dictionary at index 1 will be empty
+            match = group_number #match is equal to 1
+            for combination in combination_list: #for each combination in combination_list
+                kmer_dict[combination] = match #kmer_dict for each of these key combinations will be 1
+        group_dict[match].append(name) #group dictionary at position 'match' will also store the name of the read
     return group_dict, UMI_dict
-
+    #this function creates two outputs 1) group_dict which is a dictionary under which reads are grouped together the key is the group_number and the values are the grouped reads, if we think of the four UMI kmers as UMI5.1,5.2, 3.1, 3.2 then 
+    #reads have to have at least two matching kmers (same sequence and same positions--which is virtually impossible for any random pair of reads) and 2) UMI_dict which stores UMI5 UMI3
+    #under the read name
 def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads):
     annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs)
     # print('reading subreads')
@@ -382,26 +384,30 @@ def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_re
     group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads)
 
 def main():
-    final = open(path + '/R2C2_full_length_consensus_reads_UMI_merged.fasta', 'w') #final is 
-    final_UMI_only = open(path + '/R2C2_full_length_consensus_reads_UMI_only.fasta', 'w')
-    matched_reads = open(path + '/matched_reads.txt', 'w')
+    final = open(path + '/R2C2_full_length_consensus_reads_UMI_merged.fasta', 'w') #final is this R2C2_full_length_consensus_reads_UMI_merged.fasta file
+    final_UMI_only = open(path + '/R2C2_full_length_consensus_reads_UMI_only.fasta', 'w') #final_UMI_only is this R2C2_full_length_consensus_reads_UMI_only.fasta file
+    matched_reads = open(path + '/matched_reads.txt', 'w') #matched_reads is this matched_reads.txt file
     print('kmer-matching UMIs')
-    groups, UMIs = read_UMIs(umi_file) #umi_file is the tab-delimited file we created with ExtractUMIs.py; name\tUMI5\tUMI3
-                                       #
+    groups, UMIs = read_UMIs(umi_file) #'groups' variable and 'UMIs' variable are defined at the two outputs from the read_UMIs file: 1) group_dict and 2)UMI_dict 
     print('reading consensus reads')
-    reads = read_fasta(fasta_file)
-    count = 0
-    sub_reads = {}
-    for group in tqdm(sorted(groups)):
-        count += len(groups[group])
-        for name in groups[group]:
-            sub_reads[name] = group
-        if count > 500000:
+    reads = read_fasta(fasta_file) #'reads' is the result of the read_fasta function performed on the fasta_file (the R2C2_Consensus.fasta input file), read_fasta produces a dictionary where sequence is stored under read name key
+    count = 0 #set variable count=0
+    sub_reads = {} #set variable 'sub_reads' as empty tuple
+    for group in tqdm(sorted(groups)): #tqdm creates a progress bar, sorted(groups) returns the group numbers
+        count += len(groups[group]) #this counts all the reads, essentially right? Mine are around 300k
+        for name in groups[group]: #for each name in group 1 for example
+            sub_reads[name] = group #sub_reads at position 'name' contains the group number. This basically creates a dictionary of reads names that store which matching group they are in
+        if count > 500000: #my count is 300k---I don't know what this loop does, does it break up processing?
             # print('processing')
             processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads)
             count = 0
             sub_reads = {}
-    processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads)
+    processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads) #this calls the processing function with all of the listed arguments--go to processing function to see what it does
+    #reads is the read:sequence dictionary from the input R2C2_Consensus.fasta
+    #sub_reads is the readname:group dictionary created in this function
+    #UMIs is the readname:UMI5,UMI3 dictionary generated from the read_UMIs(umi_file) function
+    #groups is the group:readname dictionary created by read_UMIs(umi_file)
+    #final, final_UMI_only and matched_reads are the files created in this function
 
 if __name__ == '__main__':
     main()
