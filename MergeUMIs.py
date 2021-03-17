@@ -200,16 +200,17 @@ def make_consensus(Molecule, UMI_number, subreads): #define make_consensus funct
     else:
         return ''
 
-def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inputs (reads, sub_reads, UMIs) 
+def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inputs (reads, sub_reads, UMIs); from the main function:reads is the read:sequence dictionary from the input R2C2_Consensus.fasta
+    #sub_reads is the readname:group dictionary created in the main function
+    #UMIs is the readname:UMI5,UMI3 dictionary generated from the read_UMIs(umi_file) function 
     group_dict, chrom_reads= {}, {} #defining variables group_dict and chrom_reads as empty dictionaries
-    groups = [] #defining groups as an empty set
+    groups = [] #defining groups as an empty list
     UMI_group, previous_start, previous_end = 0, 0, 0 #setting the variables UMI_group, previous_start, and previous_end as 0
-    for name, group_number in sub_reads.items(): #the .items() function in python returns the key:value pairs in a dictionary, so the sub_reads input is likely a dictionary
-                                                 #where name is the key and group_number is the value
-        root_name = name.split('_')[0] #root_name equals the read name split by '_' and the 0 index position (probably will be just the name (not the qual scores, etc))
-        UMI5 = UMIs[name][0] #what is the UMIs input? 
-        UMI3 = UMIs[name][1]
-        if root_name not in chrom_reads:
+    for name, group_number in sub_reads.items(): #the .items() function in python returns the key:value pairs in a dictionary; so it's the name from R2C2_Consensus.fasta (readName_averageQuality_originalReadLength_numberOfRepeats_subreadLength) and then the group number
+        root_name = name.split('_')[0] #root_name equals the read name split by '_' and the 0 index position--the name of the read (not qual scores or anything else)
+        UMI5 = UMIs[name][0] #UMI dictionary again is readname: UMI5, UMI3 so UMIs[name][0] will be UMI5, and UMIs[name][1] will be UMI3
+        UMI3 = UMIs[name][1] #as above
+        if root_name not in chrom_reads: #if root_name is not in chrom_reads (
             chrom_reads[root_name] = []
             if group_number not in group_dict:
                 group_dict[group_number] = []
@@ -376,12 +377,12 @@ def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' scr
     #this function creates two outputs 1) group_dict which is a dictionary under which reads are grouped together the key is the group_number and the values are the grouped reads, if we think of the four UMI kmers as UMI5.1,5.2, 3.1, 3.2 then 
     #reads have to have at least two matching kmers (same sequence and same positions--which is virtually impossible for any random pair of reads) and 2) UMI_dict which stores UMI5 UMI3
     #under the read name
-def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads):
-    annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs)
+def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads): #defines the processing function with the given arguments
+    annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs) #annotated_groups, chrom_reads are the products of the parse_reads(reads,sub_reads,UMIs) function
     # print('reading subreads')
-    subreads = read_subreads(subreads_file, chrom_reads)
+    subreads = read_subreads(subreads_file, chrom_reads) #subreads is the product of read_subreads(subreads_file, chrom_reads) function
     # print('grouping and merging consensus reads')
-    group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads)
+    group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads) #call to group_reads function
 
 def main():
     final = open(path + '/R2C2_full_length_consensus_reads_UMI_merged.fasta', 'w') #final is this R2C2_full_length_consensus_reads_UMI_merged.fasta file
