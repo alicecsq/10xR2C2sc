@@ -140,13 +140,13 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
 
     return corrected_consensus, repeats, headers[0], round(np.average(qual), 2), int(np.average(raw)), int(np.average(before)), int(np.average(after))
 
-def read_subreads(seq_file, chrom_reads):
-    for read in mm.fastx_read(seq_file, read_comment=False):
-        root_name = read[0].split('_')[0]
-        if root_name in chrom_reads:
+def read_subreads(seq_file, chrom_reads): #define read_subreads function (referenced in processing with the inputs subreads_file, chrom_reads)--this is the subreads input fastq
+    for read in mm.fastx_read(seq_file, read_comment=False): #use mappy to read this file line by line
+        root_name = read[0].split('_')[0] #this pulls the rootname from the subreads '@ed20f548-6dac-45ac-acf1-076b26267bf9'--make note! This name has @ in front, but chrom_reads does NOT
+        if root_name in chrom_reads: #chrom_reads has NO group information...it's literally just ALL of the read names; also this won't work because the '@' in front
             # root_name : [(header, seq, qual), ...]
-            chrom_reads[root_name].append(read) # read = (header, seq, qual)
-    return chrom_reads
+            chrom_reads[root_name].append(read) # read = (header, seq, qual); append read info in this empty chrom_reads dictionary
+    return chrom_reads #so now we have a dictionary that contains the root read name and all of the fastq subread info for that root read; but we have NO group info
 
 def read_fasta(infile): #defining read_fasta (this function is called in the define_consensus function) 
     reads = {} #generates empty dictionary called 'reads'
@@ -201,7 +201,7 @@ def make_consensus(Molecule, UMI_number, subreads): #define make_consensus funct
         return ''
 
 def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inputs (reads, sub_reads, UMIs); from the main function:reads is the read:sequence dictionary from the input R2C2_Consensus.fasta
-    #sub_reads is the readname:group dictionary created in the main function
+    #sub_reads is the readname:group dictionary created in the main function (this encompasses all the reads)
     #UMIs is the readname:UMI5,UMI3 dictionary generated from the read_UMIs(umi_file) function 
     group_dict, chrom_reads= {}, {} #defining variables group_dict and chrom_reads as empty dictionaries
     groups = [] #defining groups as an empty list
@@ -210,15 +210,15 @@ def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inp
         root_name = name.split('_')[0] #root_name equals the read name split by '_' and the 0 index position--the name of the read (not qual scores or anything else)
         UMI5 = UMIs[name][0] #UMI dictionary again is readname: UMI5, UMI3 so UMIs[name][0] will be UMI5, and UMIs[name][1] will be UMI3
         UMI3 = UMIs[name][1] #as above
-        if root_name not in chrom_reads: #if root_name is not in chrom_reads (
-            chrom_reads[root_name] = []
-            if group_number not in group_dict:
-                group_dict[group_number] = []
-            group_dict[group_number].append((name, UMI5, UMI3, reads[name]))
-    for group_number in sorted(group_dict):
-        group = group_dict[group_number]
-        groups.append(list(set(group)))
-    return groups, chrom_reads
+        if root_name not in chrom_reads: #if root_name is not in chrom_reads (which it shouldn't be because these are all unique consensus read names, not subread names...)
+            chrom_reads[root_name] = [] #chrom_reads list at this name is empty
+            if group_number not in group_dict: #if the group number is not in the group_dict (group number IS something that can be repeated); but for the first time it appears...
+                group_dict[group_number] = [] #group_dict at [group number] is empty
+            group_dict[group_number].append((name, UMI5, UMI3, reads[name])) #group_dict at the group_number, append the read name, UMI5, UMI3, and read sequence (which we didn't have before associated with the UMI or group#)
+    for group_number in sorted(group_dict): #sorts group dictionary by ascending number
+        group = group_dict[group_number] 
+        groups.append(list(set(group))) #this basically creates a list version of the group_dict, just without the 'key' the group number; this list can be indexed
+    return groups, chrom_reads #creates a dictionary root_name:[]; this dictionary is empty because there is no root_name in chrom_reads as these are consensus reads so the root read name will never be the same
 
 def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads): #define function group_reads with inputs (groups, reads, subreads UMIs, final, final_UMI_only, matched_reads)
     UMI_group = 0 #set variable UMI_group equal to 0 
@@ -378,8 +378,7 @@ def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' scr
     #reads have to have at least two matching kmers (same sequence and same positions--which is virtually impossible for any random pair of reads) and 2) UMI_dict which stores UMI5 UMI3
     #under the read name
 def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads): #defines the processing function with the given arguments
-    annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs) #annotated_groups, chrom_reads are the products of the parse_reads(reads,sub_reads,UMIs) function
-    # print('reading subreads')
+    annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs) #annotated_groups, chrom_reads are the products of parse_reads which is the groups list, and the rootname:[] dictionary
     subreads = read_subreads(subreads_file, chrom_reads) #subreads is the product of read_subreads(subreads_file, chrom_reads) function
     # print('grouping and merging consensus reads')
     group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads) #call to group_reads function
