@@ -13,7 +13,7 @@ parser.add_argument('-s', '--subreads_file', type=str)
 parser.add_argument('-o', '--output_path', type=str)
 parser.add_argument('-u', '--umi_file', type=str)
 parser.add_argument('-c', '--config_file', type=str)
-parser.add_argument('-m', '--score_matrix', type=str)
+#edited out -m, --score_matrix argument as it's never used in the code
 
 args = parser.parse_args()
 path = args.output_path + '/'
@@ -25,94 +25,82 @@ config_file= args.config_file
 score_matrix = args.score_matrix
 subsample = 200
 
-def configReader(configIn): #configIn is our config file where each line has the name of the program, a tab separation, and the path to the executable
+def configReader(configIn): #parses config file and assigns names to programs; initialize env with 'source ~/.bashrc' if added to path
     '''Parses the config file.'''
-    progs = {} #defines progs as an empty dictionary
-    for line in open(configIn): #for each line in the config file
+    progs = {}
+    for line in open(configIn): 
         if line.startswith('#') or not line.rstrip().split():
             continue
-        line = line.rstrip().split('\t') #splits each line by tab, creating a new list called "line" that has the name at index 0 and path at index 1
-        progs[line[0]] = line[1] #appends new value to empty progs dictionary where the key is the program name, and the value stored under the key is the path like {'poa':'/usr/bin/poaV2/poa'}
-        #Now we have a progs dictionary where the path to each program is stored under the program name
-    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'blat','emtrey', 'psl2pslx']) #creates set of possible program names; do I need emtrey and psl2pslx?
-    inConfig = set() #creates an empty set called inConfig
-    for key in progs.keys(): #for each program name in the config file, add the program name to inConfig set
+        line = line.rstrip().split('\t') 
+        progs[line[0]] = line[1] 
+        
+    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'blat','emtrey', 'psl2pslx']) #don't think I actually need psl2pslx and emtrey...
+    inConfig = set() 
+    for key in progs.keys(): 
         inConfig.add(key)
-        if key not in possible: #if the program name from the program file is not in the listof possible programs, raise exception
+        if key not in possible: 
             raise Exception('Check config file')
-    # check for missing programs
-    # if missing, default to path
-    for missing in possible-inConfig: #create a list that is the subtraction of programs in the config file from possible programs, for each of the elements in this list...
-        if missing == 'consensus': #if the program that is missing from inConfig is the consensus program...
-            path = 'consensus.py' #the path is just the local consensus.py file
+
+    for missing in possible-inConfig: 
+        if missing == 'consensus': 
+            path = 'consensus.py' 
         else:
-            path = missing #otherwise path is equal to the name of the missing program 
+            path = missing  
         progs[missing] = path 
         sys.stderr.write('Using ' + str(missing)
                          + ' from your path, not the config file.\n')
     return progs
 
 progs = configReader(config_file)
-poa = progs['poa'] # for an empty config file, the key 'poa' doesn't store the path, it just stores the name 'poa'. Which is fine because it's already an executable, you can just type 'poa' into the terminal and it works.
+poa = progs['poa'] 
 minimap2 = progs['minimap2']
 racon = progs['racon']
 consensus = progs['consensus']
-#looks like the only programs needed are the consensus.py script, poa-biopipeline, minimap2 and racon (I got emtrey but can't find psl2pslx anywhere)
 
-def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'determine_consensus' with four arguments 
-    '''Aligns and returns the consensus''' #so if alignment occurs does it need minimap2? Presumably this is the same alignment and consensus strategy that C3POa uses but the C3POa aligner is conk...
-    corrected_consensus = '' #defines corrected_consensus variable as an empty string
-    out_F = fasta #out_F is the fasta argument input  
-    fastq_reads = read_fastq_file(fastq, False) #read_fastq_file function determined futher down; it's inputs are (seq file, and check).  
-    out_Fq = temp_folder + '/subsampled.fastq' #out_Fq is the temp_folder input/subsampled.fastq (this creates a directory to store the out fq)
-    out = open(out_Fq, 'w') #write out to the /subsampled.fastq file defined above
-    indexes = np.random.choice(np.arange(0, len(fastq_reads), 1), min(len(fastq_reads), subsample), replace=False) #uses NumPy function np.random.choice 
-    #np.arange takes arguments in (start, stop, step) form and returns an array with evenly-spaced values. Here the start value is 0, the stop value is the length of the fastq_reads file (so maybe how many reads?), and 1 is the interval
-    #then np.random.choice takes the following inputs (a, size, replace, p) where a is an array (in this case it is the np.arange array), size is the size of the returned random sample
-    #here that is the smallest of the two values: fastq_reads length or subsample (defined as 200 above), and replace=False (still don't really know what this means)
+
+def determine_consensus(name, fasta, fastq, temp_folder): 
+    '''Takes input fasta as C3POa-consensus reads that have L =< 2 between the four UMI kmers. Determines the 'best' C3POa consensus read
+    as that with the most subreads. Fetches all the subreads from all the reads in this group, aligns them to the best consensus read with minimap2
+    and polishes with racon. Generates new consensus read.'''
+    corrected_consensus = '' 
+    out_F = fasta   
+    fastq_reads = read_fastq_file(fastq, False)   
+    out_Fq = temp_folder + '/subsampled.fastq' 
+    out = open(out_Fq, 'w') 
+    indexes = np.random.choice(np.arange(0, len(fastq_reads), 1), min(len(fastq_reads), subsample), replace=False)
     
-    #Basically this is saying give me 200 random values between 0 and the total number of reads in the fastq, these values are then the positions of 200 random reads in the fastq input file that will be used for the rest of this function
-
-    subsample_fastq_reads = [] #define subasmple_fastq_reads as an empty list
-    for index in indexes: #for each value in indexes (that list of 200 random numbers)...
-        subsample_fastq_reads.append(fastq_reads[index]) #add the random read at that position in the fastq file to this empty subsample_fastq_reads list
-    #At the end of this 'for' loop we now have a populated list of 200 randomly-selected reads from our fastq file
-    for read in subsample_fastq_reads: #now for each of these randomly-selected reads, write out to our fastq_out directory...
-        out.write('@' + read[0] + '\n' + read[1] + '\n+\n' + read[2] + '\n') #write out @ (the start of the first line for a fastq) plus the read at position [0] which would be the name??
-    out.close()                                                              #then the read sequence [1] then the scores [2]??? Need to investigate what this actually makes...
-#at the end of all this you have a temporary fastq file named 'subsampled.fastq' that should have 200 randomly selected reads from your input fastq
+    subsample_fastq_reads = [] 
+    for index in indexes: 
+        subsample_fastq_reads.append(fastq_reads[index])
+    for read in subsample_fastq_reads:
+        out.write('@' + read[0] + '\n' + read[1] + '\n+\n' + read[2] + '\n')
+    out.close()
     
-    poa_cons = temp_folder + '/consensus.fasta' #defines poa_cons as a consensus.fasta file in the output path
-    final = temp_folder + '/corrected_consensus.fasta' #defines final as a corrected_consensus.fasta file in the output path
-    overlap = temp_folder + '/overlaps.sam' #defines overlap as a overlaps.sam file in the output path
-    pairwise = temp_folder + '/prelim_consensus.fasta' #defines pairwise as a prelim_consensus.fasta file in the output path
+    poa_cons = temp_folder + '/consensus.fasta'
+    final = temp_folder + '/corrected_consensus.fasta'
+    overlap = temp_folder + '/overlaps.sam'
+    pairwise = temp_folder + '/prelim_consensus.fasta'
 
-    max_coverage, repeats = 0, 0 #assigns two variables at once, max_coverage=0 and repeats=0
-    reads = read_fasta(out_F) #defines variable 'reads' as the PRODUCT of the read_fasta function operated on out_F (the input fasta to the determine_consensus function)
-    qual, raw, before, after = [], [], [], [] #defines four empty list variables qual, raw, before, after
+    max_coverage, repeats = 0, 0
+    reads = read_fasta(out_F) 
+    qual, raw, before, after = [], [], [], [] 
 
-    header_log = path + 'header_associations.tsv' #creates a new log file called header_associations.tsv
-    header_fh = open(header_log, 'a+') #open header log file and APPEND (as opposed to 'write' which will add to the beginning of the file, append will add to the end)
-    headers = [] #create empty list called 'headers'
-    for read in reads: #the out_F file is defined as the fasta that is input into the determine_consensus function, when the determine_consensus function is actually called in
-                       #the make_consensus function, the given fasta is something called 'temp_consensus_reads.fasta'; if I look at the structure of that file, the names that are
-                       #being referred to by read are structured: 'f11ac981-9408-4643-9b65-a250b0232be2_21.57_30141_25_1284|10'
-        info = read.split('_') #splits a string into a list using '_' character as the break, so for the aforementioned name it would be readName_averageQuality_originalReadLength_numberOfRepeats_subreadLength
-        coverage = int(info[3]) #coverage is info at index 3, which is 'Number of Repeats'
-        headers.append(info[0]) #headers is info at index 0, which is 'Read Name'
-        qual.append(float(info[1])) #qual is the decimal value of info at index 1, which is "Average Quality"
-        raw.append(int(info[2])) #raw is the integer value of info at index 2, which is "Original Read Length"
-        repeats += int(info[3]) #repeats is the integer value of info at index 3, which is "Number of Repeats" now ADDED to the variable 'repeats' defined outside the loop as 0
-        before.append(str(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"--this is where the error is coming from, the last '_' delimited
-                                    #item in the read name '1284|10' so either they messed up or this is not the right fasta file...
-                                    #the R2C2_Consensus and R2C2_Subreads files generated from C3POa don't have the |10 on the end...
-                                    #'before' is the empty list created earlier in the function; but info[4] is int|10, python thinks we are trying to do a bitwise operation
-        after.append(int(info[5].split('|')[0])) #'after' is the empty list created earlier; info[5] shouldn't exist but it is clear that this was written with the int|10 value in mind
-                                                 #am I putting the wrong fasta in here? 
+    header_log = path + '/header_associations.tsv' #added '/' otherwise wouldn't write to file
+    header_fh = open(header_log, 'a+')
+    headers = []
+    for read in reads: 
+        info = read.split('_')
+        coverage = int(info[3]) #Number of Subreads
+        headers.append(info[0]) #Name
+        qual.append(float(info[1])) #Read Quality
+        raw.append(int(info[2])) #Read Length
+        repeats += int(info[3]) #will report the total number of subreads from the reads combined (for the new consensus read)
+        before.append(int(info[4].split('|')[0])) #had to fix this; 'before' now refers to the subread length
+        #had to delete 'after' here because it was referring to an index in info that didn't exist; don't know what the intended information is supposed to be...
 
-        if coverage >= max_coverage: #max_coverage was defined as 0, coverage is the number of repeats 
-            best = read #if coverage is greater than 0 then 'best' is the name of the read
-            max_coverage = coverage #max_coverage becomes the number of repeats
+        if coverage >= max_coverage: 
+            best = read 
+            max_coverage = coverage 
 
     print('\t'.join(headers), file=header_fh) 
     header_fh.close()
@@ -138,33 +126,24 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
     for read in reads:
         corrected_consensus = reads[read]
 
-    return corrected_consensus, repeats, headers[0], round(np.average(qual), 2), int(np.average(raw)), int(np.average(before)), int(np.average(after))
+    return corrected_consensus, repeats, headers[0], round(np.average(qual), 2), int(np.average(raw)), int(np.average(before)), len(corrected_consensus) #changed last value to length of the corrected consensus read
 
-def read_subreads(seq_file, chrom_reads): #define read_subreads function (referenced in processing with the inputs subreads_file, chrom_reads)--this is the subreads input fastq
-    for read in mm.fastx_read(seq_file, read_comment=False): #use mappy to read this file line by line
-        root_name = read[0].split('_')[0] #this pulls the rootname from the subreads '@ed20f548-6dac-45ac-acf1-076b26267bf9'--make note! This name has @ in front, but chrom_reads does NOT
-        if root_name in chrom_reads: #chrom_reads has NO group information...it's literally just ALL of the read names; also this won't work because the '@' in front
+def read_subreads(seq_file, chrom_reads): #creates read dictionary with read root names and the subread information belonging to them from the R2C2_Subreads.fastq file
+    for read in mm.fastx_read(seq_file, read_comment=False): 
+        root_name = read[0].split('_')[0] 
+        if root_name in chrom_reads: 
             # root_name : [(header, seq, qual), ...]
-            chrom_reads[root_name].append(read) # read = (header, seq, qual); append read info in this empty chrom_reads dictionary
-    return chrom_reads #so now we have a dictionary that contains the root read name and all of the fastq subread info for that root read; but we have NO group info...
+            chrom_reads[root_name].append(read) 
+    return chrom_reads
 
-def read_fasta(infile): #defining read_fasta (this function is called in the define_consensus function) 
-    reads = {} #generates empty dictionary called 'reads'
-    for read in mm.fastx_read(infile, read_comment=False): #mm. (similar to np. syntax) denotes a mappy function; here mm.fastx_read with read_comment=False generates a (name, seq, qual) tuple for each sequence entry
-        #tuples are used to store multiple items in one variable and they are indexed
-        reads[read[0]] = read[1] #creates a dictionary calleds 'reads' where the sequence is stored under the name of the sequence 
+def read_fasta(infile): #creates readname:sequence dictionary from input fasta 
+    reads = {} 
+    for read in mm.fastx_read(infile, read_comment=False): 
+        reads[read[0]] = read[1] 
     return reads
 
-def read_fastq_file(seq_file, check): #defining the read_fastq_file with two arguments (seq_file, check)
+def read_fastq_file(seq_file, check): #checks to see if fastq file is empty or not
     '''
-    Takes a FASTQ file and returns a list of tuples
-    In each tuple:
-        name : str, read ID
-        seed : int, first occurrence of the splint
-        seq : str, sequence
-        qual : str, quality line
-        average_quals : float, average quality of that line
-        seq_length : int, length of the sequence
     Has a check mode where if it sees one read, it'll return True
     '''
     read_list = []
@@ -179,16 +158,16 @@ def read_fastq_file(seq_file, check): #defining the read_fastq_file with two arg
         read_list.append((read[0], seq, qual, avg_q, s_len))
     return read_list
 
-def make_consensus(Molecule, UMI_number, subreads): #define make_consensus function with input arguments (Molecule, UMI_number, subreads)
-    subread_file = path + '/temp_subreads.fastq' #creates subread_file 'temp_subreads.fastq'
-    fastaread_file = path + '/temp_consensus_reads.fasta' #creates fastaread_file 'temp_consensus_reads.fasta'
-    subs = open(subread_file, 'w') #open subread_file (temp_subreads.fastq) and write to the beginning of the file
-    fasta = open(fastaread_file, 'w') #open fastaread_file (temp_consensus_reads.fasta) and write to the beginning of the file
-    for read in Molecule: #make_consensus function is called later in the group_reads function (Molecule variable is defined there); 
+def make_consensus(Molecule, UMI_number, subreads): #calls determine_consensus fxn on groups of reads that pass Levenshtein test for UMI kmers
+    subread_file = path + '/temp_subreads.fastq' 
+    fastaread_file = path + '/temp_consensus_reads.fasta'
+    subs = open(subread_file, 'w')
+    fasta = open(fastaread_file, 'w')
+    for read in Molecule:  
         fasta.write(read) 
         # print(read)
         root_name = read[1:].split('_')[0]
-        raw = subreads[root_name] # [(header, seq, qual), ...], includes rootname_subread_n
+        raw = subreads[root_name]
         for entry in raw:
             subs.write('@' + entry[0] + '\n' + entry[1] + '\n+\n' + entry[2] + '\n')
     subs.close()
@@ -200,76 +179,63 @@ def make_consensus(Molecule, UMI_number, subreads): #define make_consensus funct
     else:
         return ''
 
-def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inputs (reads, sub_reads, UMIs); from the main function:reads is the read:sequence dictionary from the input R2C2_Consensus.fasta
-    #sub_reads is the readname:group dictionary created in the main function (this encompasses all the reads)
-    #UMIs is the readname:UMI5,UMI3 dictionary generated from the read_UMIs(umi_file) function 
-    group_dict, chrom_reads= {}, {} #defining variables group_dict and chrom_reads as empty dictionaries
-    groups = [] #defining groups as an empty list
-    UMI_group, previous_start, previous_end = 0, 0, 0 #setting the variables UMI_group, previous_start, and previous_end as 0
-    for name, group_number in sub_reads.items(): #the .items() function in python returns the key:value pairs in a dictionary; so it's the name from R2C2_Consensus.fasta (readName_averageQuality_originalReadLength_numberOfRepeats_subreadLength) and then the group number
-        root_name = name.split('_')[0] #root_name equals the read name split by '_' and the 0 index position--the name of the read (not qual scores or anything else)
-        UMI5 = UMIs[name][0] #UMI dictionary again is readname: UMI5, UMI3 so UMIs[name][0] will be UMI5, and UMIs[name][1] will be UMI3
-        UMI3 = UMIs[name][1] #as above
-        if root_name not in chrom_reads: #if root_name is not in chrom_reads (which it shouldn't be because these are all unique consensus read names, not subread names...)
-            chrom_reads[root_name] = [] #chrom_reads list at this name is empty
-            if group_number not in group_dict: #if the group number is not in the group_dict (group number IS something that can be repeated); but for the first time it appears...
-                group_dict[group_number] = [] #group_dict at [group number] is empty
-            group_dict[group_number].append((name, UMI5, UMI3, reads[name])) #group_dict at the group_number, append the read name, UMI5, UMI3, and read sequence (which we didn't have before associated with the UMI or group#)
-    for group_number in sorted(group_dict): #sorts group dictionary by ascending number
+def parse_reads(reads, sub_reads, UMIs): #creates rootname:[] dictionary that will be populated with subreads by read_subreads fxn 
+    group_dict, chrom_reads= {}, {}
+    groups = []t
+    UMI_group, previous_start, previous_end = 0, 0, 0
+    for name, group_number in sub_reads.items():
+        root_name = name.split('_')[0]
+        UMI5 = UMIs[name][0]
+        UMI3 = UMIs[name][1]
+        if root_name not in chrom_reads:
+            chrom_reads[root_name] = []
+            if group_number not in group_dict:
+                group_dict[group_number] = []
+            group_dict[group_number].append((name, UMI5, UMI3, reads[name]))
+    for group_number in sorted(group_dict):
         group = group_dict[group_number] 
-        groups.append(list(set(group))) #this basically creates a list version of the group_dict, just without the 'key' the group number; this list can be indexed
-    return groups, chrom_reads #creates a dictionary root_name:[]; this dictionary is empty because there is no root_name in chrom_reads as these are consensus reads so the root read name will never be the same
+        groups.append(list(set(group)))
+    return groups, chrom_reads
 
-def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads): #define function group_reads with inputs (groups, reads, subreads UMIs, final, final_UMI_only, matched_reads)
-    #in the main function these inputs are (annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads)
-    #annotated_groups is a list version of group_dict; reads are still grouped together with read_name, UMI5, UMI3, sequence but there is no group number
-    #reads are the reads in the R2C2_Consensus.fasta file
-    #subreads is the chrom_reads dictionary filled with all of the subread names, sequences, and quality scores
-    #UMIs are the UMIs from read_UMIs function
-    #final, final_UMI_only, and matched_reads are out files 
-   UMI_group = 0 #set variable UMI_group equal to 0 
-    # print(len(groups))
+def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads):
+    '''Takes groups from read_UMIs fxn and attributes the same UMI_number to reads within the group that 
+    have L =< 2 between the four UMI kmers. Creates consensus reads between these subgroups'''
+   UMI_group = 0
     for group in groups: # 
         group = list(set(group))
         UMI_dict = {}
         set_dict = {}
-        group_counter = 0 #now each group is it's own set, so for each set...let's carry through with an example where there are multiple reads per group
-        if len(group) > 1: #so for each group, if there are more than two reads in this group...
-            group_counter += 1 #group_counter goes up by one...but this variable is within the for loop so it will be reset to 0 after each group...
-            # print('test', group_counter, len(group))
-            UMI_counter = 0 #UMI_counter equals 0 
-            for i in range(0, len(group), 1): #let's say our group has two reads, so for i=0 and 1
-                UMI_dict[group[i][0]] = set() #creates a UMI_dict that is empty if there is only one read in a group, but for groups with two or more reads it creates a temporary UMI_dict tuple
-                                              #where each read name in the group is the key to an empty set; so for a group with read_1 and read_2, UMI_dict is {read_1:set(), read_2:set()}
-                                              #I'm assuming this set gets populated 
-            # if len(group) == 2:
-            #     print(group[0][1], group[0][2])
-            #     print(group[1][1], group[1][2])
+        group_counter = 0
+        if len(group) > 1:
+            group_counter += 1
+            UMI_counter = 0 
+            for i in range(0, len(group), 1):
+                UMI_dict[group[i][0]] = set()
 
-            for i in range(len(group)): #comparing each read in the group with the next read (last read is compared ot itself??); violations give the read pair the 'single' attribute rather than 'both'
+            for i in range(len(group)):
                 UMI_counter += 1 
                 UMI_dict[group[i][0]].add(UMI_counter) 
                 for j in range(i+1, len(group)): 
                     if np.abs(len(group[i][3])-len(group[j][3]))/len(group[i][3]) < 0.1: #if the read pair is about the same length...
-                        status = 'both' #status = 'both'
-                        if len(group[i][1]) > 0 and len(group[j][1]) > 0: #if the UMI5 for each of the reads in the pair exists...
-                            dist5 = editdistance.eval(group[i][1], group[j][1]) #dist5 is the Levenshtein distance between the UMI5s
+                        status = 'both' 
+                        if len(group[i][1]) > 0 and len(group[j][1]) > 0:
+                            dist5 = min(editdistance.eval(reverse_complement(group[i][1]), group[j][1]), editdistance.eval(group[i][1], group[j][1])) #to include rev comp
 
                         else: #if the UMI5 doesn't exist for one or both reads in the compared pair...
                             dist5 = 15 #then L=15 because UMI5 is 15bp long
                             status = 'single' #status is changed from 'both' to 'single' 
-                        if len(group[i][2]) > 0 and len(group[j][2]) > 0: #NOW is the UMI3 for both reads exists...
-                            dist3 = editdistance.eval(group[i][2], group[j][2]) #probe the Levenshtein distance between them 
+                        if len(group[i][2]) > 0 and len(group[j][2]) > 0:
+                            dist3 = min(editdistance.eval(reverse_complement(group[i][2]), group[j][2]), editdistance.eval(group[i][2], group[j][2])) 
                         else: #if the read pair is missing one or both UMI3s...
                             dist3 = 15 #dist3 is 15 because UMI3 is 15bp long
                             status = 'single' #status is changed from 'both' to 'single'
 
                         match = 0 #set match variable to 0
                         if status == 'both': #if the read pair passed the length and UMI requirements...
-                            if dist5 + dist3 <= 2: #ifthe cumulative Levenshtein distance between the two UMIs is 2 or less...
+                            if dist5 + dist3 <= 2: #if the cumulative Levenshtein distance between the two UMIs is 2 or less...
                                 match = 1 #match variable = 1
-                        if match == 1: #if match is 1
-                            UMI_dict[group[j][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]] #this creates a list {1,2} that has the matching values
+                        if match == 1:
+                            UMI_dict[group[j][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
                             UMI_dict[group[i][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
 
             for i in range(0, len(group), 1):
@@ -277,12 +243,12 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
                     if np.abs(len(group[i][3])-len(group[j][3]))/len(group[i][3]) < 0.1:
                         status = 'both'
                         if len(group[i][1]) > 0 and len(group[j][1]) > 0:
-                            dist5 = editdistance.eval(group[i][1], group[j][1])
+                            dist5 = min(editdistance.eval(reverse_complement(group[i][1]), group[j][1]), editdistance.eval(group[i][1], group[j][1]))
                         else:
                             dist5 = 15
                             status = 'single'
                         if len(group[i][2]) > 0 and len(group[j][2]) > 0:
-                            dist3 = editdistance.eval(group[i][2], group[j][2])
+                            dist3 = min(editdistance.eval(reverse_complement(group[i][2]), group[j][2]), editdistance.eval(group[i][2], group[j][2]))
                         else:
                             dist3 = 15
                             status = 'single'
@@ -294,11 +260,10 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
                         if match == 1:
                             UMI_dict[group[j][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
                             UMI_dict[group[i][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
-     #UMI_dict is now an ordered dictionary of each read in the group, with matching reads having the same dictionary values, i.e. {2,3}
 
             for entry in UMI_dict: #now we have a UMI dictionary where the reads are still grouped but read pairs that have passed the L distance test have their set populated with their read match
-                counter_set = UMI_dict[entry] #counter_set is the UMI_dict value for that entry (so the tuple values); i.e {1,2}, {1,2}, and {3}
-                if not set_dict.get(tuple(counter_set)): #set_dict is an empty dictionary that is re-set for each new group
+                counter_set = UMI_dict[entry]
+                if not set_dict.get(tuple(counter_set)):
                     UMI_group += 1
                     set_dict[tuple(counter_set)] = UMI_group
 
@@ -308,22 +273,22 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
                 read_list.append(('>%s|%s\n%s\n' % (group[i][0], str(UMI_number), group[i][3]), UMI_number, group[i][1], group[i][2]))
             
             previous_UMI = ''
-            Molecule = set() #defines Molecule as an empty set 
+            Molecule = set() 
             for read, UMI_number, umi5, umi3 in sorted(read_list, key=lambda x:int(x[1])):
                 matched_reads.write(str(UMI_number) + '\t' + read.split('|')[0] + '\t' + umi5 + '\t' + umi3 + '\n')
-                if UMI_number != previous_UMI: #previous_UMI is empty, so UMI_number 
+                if UMI_number != previous_UMI: 
                     if len(Molecule) == 1:
                         final.write(list(Molecule)[0])
                     elif len(Molecule) > 1:
-                        new_read = make_consensus(list(Molecule), previous_UMI, subreads) #make_consensus function defined earlier has the input arguments
-                                                                                          #(Molecule, UMI_number, subreads)
+                        new_read = make_consensus(list(Molecule), previous_UMI, subreads)
+                        
                         if not new_read:
                             continue
                         final.write(new_read)
                         final_UMI_only.write(new_read)
-                    Molecule = set()#if the current_UMI does not match previous UMI and Molecule is empty
-                    Molecule.add(read) #if the current_UMI does not match 'previous_UMI' then add the read name to 'Molecule'
-                    previous_UMI = UMI_number #if the previous_UMI is empty, then 'previous_UMI' becomes the current UMI_number 
+                    Molecule = set()
+                    Molecule.add(read)
+                    previous_UMI = UMI_number 
 
                 elif UMI_number == previous_UMI:
                     Molecule.add(read)
@@ -344,31 +309,47 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
             UMI_group += 1
             final.write('>%s|%s\n%s\n' % (group[0][0], str(UMI_group), group[0][3]))
     # print(group_counter)
+    
+def reverse_complement(sequence): #added revcomp function so reverse strand from UMI file can be probed for matching as well
+  Seq = ''
+  complement = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'N':'N', '-':'-'}
+  for item in sequence[::-1]:
+    Seq = Seq + complement[item]
+  return Seq
 
-def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' script with the umi_file input 
-    UMI_dict, group_dict, kmer_dict = {}, {}, {} #setting variables UMI_dict, group_dict, kmer_dict as empty dictionaries
-    group_number = 0 #sets variable group_number as 0
-    for line in open(UMI_file): #for each line in the UMI file, again organized as 'name'\t'UMI5'\t'UMI3'...
-        a = line.strip('\n').split('\t') #remove spaces at beginning and end of each line and split line by tabs
-        name, UMI5, UMI3 = a[0], a[1], a[2] #name and UMI5 and UMI3 are now defined correctly by their position on each line
-        kmer_list = ['', '', '', ''] #defining variable kmer_list as an empty list with four indix positions
-
-        UMI_dict[name] = (UMI5, UMI3) #populate the UMI dictionary; the name of the read is the key and the UMI5 and the UMI3 values are stored under it
-        if UMI5[5:10] == 'TATAT': #if the middle of UMI5 is TATAT...
-            kmer_list[0] = UMI5[:5] #kmer_list at position 0 is the UMI5 sequence from 0 to 5 (NNNNN) first random pentamer barcode sequence
-            kmer_list[1] = UMI5[10:] #kmer_list at position 1 is the UMI5 sequence from 10 onward (NNNNN) second random pentamer barcode sequence
-        if UMI3[5:10] == 'ATATA': #if the middle of UMI3 is ATATA (which we have confirmed will NOT happen with a UMI5 that is TATAT, because they are both on the same strand...)
-            kmer_list[2] = UMI3[:5] #kmer_list at position 2 is the first random pentamer barcode sequence of UMI3
-            kmer_list[3] = UMI3[10:] #kmer_list at position 3 is the second random pentamer barcode sequence of UMI3
-
+def read_UMIs(UMI_file): 
+    '''Reads UMIs from input UMI file and groups reads loosely by kmer matching
+    Groups are further refined by L distance in the group_reads fxn before consensus calling.''' 
+    UMI_dict, group_dict, kmer_dict = {}, {}, {} 
+    group_number = 0 
+    for line in open(UMI_file): 
+        a = line.strip('\n').split('\t') 
+        name, UMI5, UMI3 = a[0], a[1], a[2] 
+        kmer_list = ['', '', '', '']
+        UMI_dict[name] = (UMI5, UMI3) 
+        if UMI5[5:10] == 'TATAT':
+            kmer_list[0] = UMI5[:5]
+            kmer_list[1] = UMI5[10:]
+        elif UMI5[5:10] == 'ATATA':
+            x=reverse_complement(UMI5) #added revcomp so rev strand with matching UMIs will be grouped too...but what about L distance??
+            kmer_list[0] = x[:5]
+            kmer_list[1] = x[10:]
+        if UMI3[5:10] == 'TATAT':
+            kmer_list[2] = UMI3[:5]
+            kmer_list[3] = UMI3[10:] 
+        elif UMI3[5:10] == 'ATATA':
+            y=reverse_complement(UMI3)
+            kmer_list[2] = y[:5]
+            kmer_list[3] = y[10:]
         combination_list = []
+
         for x in range(4):
             for y in range(x+1, 4):
                 first_kmer = kmer_list[x]
                 second_kmer = kmer_list[y]
                 if first_kmer != '' and second_kmer != '':
                     combination = '_' * x+first_kmer + '_' * (y-x)+second_kmer + '_' * (3-y)
-                    combination_list.append(combination) #combination list is a coded list that represents the relationship between the four kmers in kmer list 
+                    combination_list.append(combination) 
         match = ''
         for combination in combination_list: #for each of the combinations in the combination list...
             if combination in kmer_dict: #if the combination is in the kmer_dict...kmer_dict is an empty dictionary so this will not be true for the first combination
@@ -376,17 +357,15 @@ def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' scr
                 for combination1 in combination_list: 
                     kmer_dict[combination1] = match
                 break
-        if match == '': #match will be empty for the first pass of the 'for' loop
-            group_number += 1 #group number for the first pass will be 1 (it is defined outside of the loop as 0
-            group_dict[group_number] = [] #the group dictionary at index 1 will be empty
-            match = group_number #match is equal to 1
-            for combination in combination_list: #for each combination in combination_list
-                kmer_dict[combination] = match #kmer_dict for each of these key combinations will be 1
-        group_dict[match].append(name) #group dictionary at position 'match' will also store the name of the read
+        if match == '':
+            group_number += 1
+            group_dict[group_number] = []
+            match = group_number
+            for combination in combination_list:
+                kmer_dict[combination] = match
+        group_dict[match].append(name)
     return group_dict, UMI_dict
-    #this function creates two outputs 1) group_dict which is a dictionary under which reads are grouped together the key is the group_number and the values are the grouped reads, if we think of the four UMI kmers as UMI5.1,5.2, 3.1, 3.2 then 
-    #reads have to have at least two matching kmers (same sequence and same positions--which is virtually impossible for any random pair of reads) and 2) UMI_dict which stores UMI5 UMI3
-    #under the read name
+
 def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads): #defines the processing function with the given arguments
     annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs) #annotated_groups, chrom_reads are the products of parse_reads which is the groups list, and the rootname:[] dictionary
     subreads = read_subreads(subreads_file, chrom_reads) #subreads is the product of read_subreads(subreads_file, chrom_reads) function; it is just a dictionary where root read names are the key and all the fastq subreads and info is stored under that key
