@@ -6,6 +6,7 @@ import os
 import sys
 import mappy as mm #mappy is an interface for minimap2, importing as mm
 from tqdm import tqdm
+'''Sheridan's edit 2021'''
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-f', '--fasta_file', type=str)
