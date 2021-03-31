@@ -103,7 +103,7 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
         qual.append(float(info[1])) #qual is the decimal value of info at index 1, which is "Average Quality"
         raw.append(int(info[2])) #raw is the integer value of info at index 2, which is "Original Read Length"
         repeats += int(info[3]) #repeats is the integer value of info at index 3, which is "Number of Repeats" now ADDED to the variable 'repeats' defined outside the loop as 0
-        before.append(int(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"--this is where the error is coming from, the last '_' delimited
+        before.append(str(info[4])) #python is having trouble here "invalid literal for int() with base 10: '1284|10'"--this is where the error is coming from, the last '_' delimited
                                     #item in the read name '1284|10' so either they messed up or this is not the right fasta file...
                                     #the R2C2_Consensus and R2C2_Subreads files generated from C3POa don't have the |10 on the end...
                                     #'before' is the empty list created earlier in the function; but info[4] is int|10, python thinks we are trying to do a bitwise operation
@@ -114,7 +114,7 @@ def determine_consensus(name, fasta, fastq, temp_folder): #defining function 'de
             best = read #if coverage is greater than 0 then 'best' is the name of the read
             max_coverage = coverage #max_coverage becomes the number of repeats
 
-    print('\t'.join(headers), file=header_fh) #prin
+    print('\t'.join(headers), file=header_fh) 
     header_fh.close()
 
     out_cons_file = open(poa_cons, 'w')
@@ -146,7 +146,7 @@ def read_subreads(seq_file, chrom_reads): #define read_subreads function (refere
         if root_name in chrom_reads: #chrom_reads has NO group information...it's literally just ALL of the read names; also this won't work because the '@' in front
             # root_name : [(header, seq, qual), ...]
             chrom_reads[root_name].append(read) # read = (header, seq, qual); append read info in this empty chrom_reads dictionary
-    return chrom_reads #so now we have a dictionary that contains the root read name and all of the fastq subread info for that root read; but we have NO group info
+    return chrom_reads #so now we have a dictionary that contains the root read name and all of the fastq subread info for that root read; but we have NO group info...
 
 def read_fasta(infile): #defining read_fasta (this function is called in the define_consensus function) 
     reads = {} #generates empty dictionary called 'reads'
@@ -221,47 +221,55 @@ def parse_reads(reads, sub_reads, UMIs): #defining function parse_reads with inp
     return groups, chrom_reads #creates a dictionary root_name:[]; this dictionary is empty because there is no root_name in chrom_reads as these are consensus reads so the root read name will never be the same
 
 def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads): #define function group_reads with inputs (groups, reads, subreads UMIs, final, final_UMI_only, matched_reads)
-    UMI_group = 0 #set variable UMI_group equal to 0 
+    #in the main function these inputs are (annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads)
+    #annotated_groups is a list version of group_dict; reads are still grouped together with read_name, UMI5, UMI3, sequence but there is no group number
+    #reads are the reads in the R2C2_Consensus.fasta file
+    #subreads is the chrom_reads dictionary filled with all of the subread names, sequences, and quality scores
+    #UMIs are the UMIs from read_UMIs function
+    #final, final_UMI_only, and matched_reads are out files 
+   UMI_group = 0 #set variable UMI_group equal to 0 
     # print(len(groups))
-    for group in groups: #group_reads function used later, where groups input is 
+    for group in groups: # 
         group = list(set(group))
         UMI_dict = {}
         set_dict = {}
-        group_counter = 0
-        if len(group) > 1:
-            group_counter += 1
+        group_counter = 0 #now each group is it's own set, so for each set...let's carry through with an example where there are multiple reads per group
+        if len(group) > 1: #so for each group, if there are more than two reads in this group...
+            group_counter += 1 #group_counter goes up by one...but this variable is within the for loop so it will be reset to 0 after each group...
             # print('test', group_counter, len(group))
-            UMI_counter = 0
-            for i in range(0, len(group), 1):
-                UMI_dict[group[i][0]] = set()
+            UMI_counter = 0 #UMI_counter equals 0 
+            for i in range(0, len(group), 1): #let's say our group has two reads, so for i=0 and 1
+                UMI_dict[group[i][0]] = set() #creates a UMI_dict that is empty if there is only one read in a group, but for groups with two or more reads it creates a temporary UMI_dict tuple
+                                              #where each read name in the group is the key to an empty set; so for a group with read_1 and read_2, UMI_dict is {read_1:set(), read_2:set()}
+                                              #I'm assuming this set gets populated 
             # if len(group) == 2:
             #     print(group[0][1], group[0][2])
             #     print(group[1][1], group[1][2])
 
-            for i in range(len(group)):
-                UMI_counter += 1
-                UMI_dict[group[i][0]].add(UMI_counter)
-                for j in range(i+1, len(group)):
-                    if np.abs(len(group[i][3])-len(group[j][3]))/len(group[i][3]) < 0.1:
-                        status = 'both'
-                        if len(group[i][1]) > 0 and len(group[j][1]) > 0:
-                            dist5 = editdistance.eval(group[i][1], group[j][1])
+            for i in range(len(group)): #comparing each read in the group with the next read (last read is compared ot itself??); violations give the read pair the 'single' attribute rather than 'both'
+                UMI_counter += 1 
+                UMI_dict[group[i][0]].add(UMI_counter) 
+                for j in range(i+1, len(group)): 
+                    if np.abs(len(group[i][3])-len(group[j][3]))/len(group[i][3]) < 0.1: #if the read pair is about the same length...
+                        status = 'both' #status = 'both'
+                        if len(group[i][1]) > 0 and len(group[j][1]) > 0: #if the UMI5 for each of the reads in the pair exists...
+                            dist5 = editdistance.eval(group[i][1], group[j][1]) #dist5 is the Levenshtein distance between the UMI5s
 
-                        else:
-                            dist5 = 15
-                            status = 'single'
-                        if len(group[i][2]) > 0 and len(group[j][2]) > 0:
-                            dist3 = editdistance.eval(group[i][2], group[j][2])
-                        else:
-                            dist3 = 15
-                            status = 'single'
+                        else: #if the UMI5 doesn't exist for one or both reads in the compared pair...
+                            dist5 = 15 #then L=15 because UMI5 is 15bp long
+                            status = 'single' #status is changed from 'both' to 'single' 
+                        if len(group[i][2]) > 0 and len(group[j][2]) > 0: #NOW is the UMI3 for both reads exists...
+                            dist3 = editdistance.eval(group[i][2], group[j][2]) #probe the Levenshtein distance between them 
+                        else: #if the read pair is missing one or both UMI3s...
+                            dist3 = 15 #dist3 is 15 because UMI3 is 15bp long
+                            status = 'single' #status is changed from 'both' to 'single'
 
-                        match = 0
-                        if status == 'both':
-                            if dist5 + dist3 <= 2:
-                                match = 1
-                        if match == 1:
-                            UMI_dict[group[j][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
+                        match = 0 #set match variable to 0
+                        if status == 'both': #if the read pair passed the length and UMI requirements...
+                            if dist5 + dist3 <= 2: #ifthe cumulative Levenshtein distance between the two UMIs is 2 or less...
+                                match = 1 #match variable = 1
+                        if match == 1: #if match is 1
+                            UMI_dict[group[j][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]] #this creates a list {1,2} that has the matching values
                             UMI_dict[group[i][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
 
             for i in range(0, len(group), 1):
@@ -286,34 +294,36 @@ def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_re
                         if match == 1:
                             UMI_dict[group[j][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
                             UMI_dict[group[i][0]] = UMI_dict[group[j][0]]|UMI_dict[group[i][0]]
+     #UMI_dict is now an ordered dictionary of each read in the group, with matching reads having the same dictionary values, i.e. {2,3}
 
-            for entry in UMI_dict:
-                counter_set = UMI_dict[entry]
-                if not set_dict.get(tuple(counter_set)):
+            for entry in UMI_dict: #now we have a UMI dictionary where the reads are still grouped but read pairs that have passed the L distance test have their set populated with their read match
+                counter_set = UMI_dict[entry] #counter_set is the UMI_dict value for that entry (so the tuple values); i.e {1,2}, {1,2}, and {3}
+                if not set_dict.get(tuple(counter_set)): #set_dict is an empty dictionary that is re-set for each new group
                     UMI_group += 1
                     set_dict[tuple(counter_set)] = UMI_group
 
-            read_list = []
-            for i in range(0, len(group), 1):
-                UMI_number = set_dict[tuple(UMI_dict[group[i][0]])]
+            read_list = [] 
+            for i in range(0, len(group), 1): 
+                UMI_number = set_dict[tuple(UMI_dict[group[i][0]])] 
                 read_list.append(('>%s|%s\n%s\n' % (group[i][0], str(UMI_number), group[i][3]), UMI_number, group[i][1], group[i][2]))
-
+            
             previous_UMI = ''
             Molecule = set() #defines Molecule as an empty set 
             for read, UMI_number, umi5, umi3 in sorted(read_list, key=lambda x:int(x[1])):
                 matched_reads.write(str(UMI_number) + '\t' + read.split('|')[0] + '\t' + umi5 + '\t' + umi3 + '\n')
-                if UMI_number != previous_UMI:
+                if UMI_number != previous_UMI: #previous_UMI is empty, so UMI_number 
                     if len(Molecule) == 1:
                         final.write(list(Molecule)[0])
                     elif len(Molecule) > 1:
-                        new_read = make_consensus(list(Molecule), previous_UMI, subreads) #make_consensus function defined earlier is called here
+                        new_read = make_consensus(list(Molecule), previous_UMI, subreads) #make_consensus function defined earlier has the input arguments
+                                                                                          #(Molecule, UMI_number, subreads)
                         if not new_read:
                             continue
                         final.write(new_read)
                         final_UMI_only.write(new_read)
-                    Molecule = set()
-                    Molecule.add(read)
-                    previous_UMI = UMI_number
+                    Molecule = set()#if the current_UMI does not match previous UMI and Molecule is empty
+                    Molecule.add(read) #if the current_UMI does not match 'previous_UMI' then add the read name to 'Molecule'
+                    previous_UMI = UMI_number #if the previous_UMI is empty, then 'previous_UMI' becomes the current UMI_number 
 
                 elif UMI_number == previous_UMI:
                     Molecule.add(read)
@@ -379,9 +389,10 @@ def read_UMIs(UMI_file): #defines function read_UMIs, that is used in 'main' scr
     #under the read name
 def processing(reads, sub_reads, UMIs, groups, final, final_UMI_only, matched_reads): #defines the processing function with the given arguments
     annotated_groups, chrom_reads = parse_reads(reads, sub_reads, UMIs) #annotated_groups, chrom_reads are the products of parse_reads which is the groups list, and the rootname:[] dictionary
-    subreads = read_subreads(subreads_file, chrom_reads) #subreads is the product of read_subreads(subreads_file, chrom_reads) function
+    subreads = read_subreads(subreads_file, chrom_reads) #subreads is the product of read_subreads(subreads_file, chrom_reads) function; it is just a dictionary where root read names are the key and all the fastq subreads and info is stored under that key
+                                                         #but no group info is stored here!!!
     # print('grouping and merging consensus reads')
-    group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads) #call to group_reads function
+    group_reads(annotated_groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads) #call to group_reads function--how does it work?
 
 def main():
     final = open(path + '/R2C2_full_length_consensus_reads_UMI_merged.fasta', 'w') #final is this R2C2_full_length_consensus_reads_UMI_merged.fasta file
