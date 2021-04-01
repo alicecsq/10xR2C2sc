@@ -23,7 +23,6 @@ subreads_file = args.subreads_file
 
 umi_file = args.umi_file
 config_file= args.config_file
-score_matrix = args.score_matrix
 subsample = 200
 
 def configReader(configIn): #parses config file and assigns names to programs; initialize env with 'source ~/.bashrc' if added to path
@@ -182,7 +181,7 @@ def make_consensus(Molecule, UMI_number, subreads): #calls determine_consensus f
 
 def parse_reads(reads, sub_reads, UMIs): #creates rootname:[] dictionary that will be populated with subreads by read_subreads fxn 
     group_dict, chrom_reads= {}, {}
-    groups = []t
+    groups = []
     UMI_group, previous_start, previous_end = 0, 0, 0
     for name, group_number in sub_reads.items():
         root_name = name.split('_')[0]
@@ -201,7 +200,7 @@ def parse_reads(reads, sub_reads, UMIs): #creates rootname:[] dictionary that wi
 def group_reads(groups, reads, subreads, UMIs, final, final_UMI_only, matched_reads):
     '''Takes groups from read_UMIs fxn and attributes the same UMI_number to reads within the group that 
     have L =< 2 between the four UMI kmers. Creates consensus reads between these subgroups'''
-   UMI_group = 0
+    UMI_group = 0
     for group in groups: # 
         group = list(set(group))
         UMI_dict = {}
