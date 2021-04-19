@@ -17,7 +17,7 @@ python3 match_fastas.py \
 
 import sys
 
-def readFasta(inFile):
+def readFasta(inFile): #parses full length consensus read fasta file; basically creates readname:sequence dictionary 
     readDict = {}
     for line in open(inFile):
         line = line.rstrip()
@@ -33,13 +33,13 @@ def readFasta(inFile):
 def readDemux(inFile, flcDict):
     for line in open(inFile):
         line = line.rstrip()
-        if line.startswith('>'):
-            header = line[1:].split('_')[0]
-            print('>' + line[1:].split('|')[0])
-            print(flcDict[header])
+        if line.startswith('>'): 
+            header = line[1:].split('_')[0] #read rootname
+            print('>' + line[1:].split('|')[0]) 
+            print(flcDict[header]) #not sure that this is actually the right thing but let's try it...
 
 def main():
-    demux, flc = sys.argv[1], sys.argv[2]
+    demux, flc = sys.argv[1], sys.argv[2] #demux is the kmer_demuxed.fasta, flc is the full length consensus reads fasta
 
     flcDict = readFasta(flc)
 
