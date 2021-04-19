@@ -18,7 +18,7 @@ General usage:
 
 import sys, os
 
-def readBC(inFile):
+def readBC(inFile): #this first step attributes a unique cell number to each of the barcodes in the most frequent barcode fasta
     '''
     Read in the barcode fasta file and return a dict:
     readDict = {"cell_#" : "barcode_sequence"}
@@ -34,7 +34,7 @@ def readBC(inFile):
             readDict[c] += line
     return readDict
 
-def readFasta(fq1, fq2, bcDict):
+def readFasta(fq1, fq2, bcDict): #fq1 is kmer_demuxed, fq2 is matched consensus reads, bcDict is the cell number:barcode dictionary
     '''
     Reads through two fasta files at the same time.
     I can do this because the first fasta contains the 10X
@@ -68,15 +68,15 @@ def readFasta(fq1, fq2, bcDict):
             writing.close()
 
 def main():
-    bcDict = readBC(sys.argv[1])
+    bcDict = readBC(sys.argv[1]) #readBC on 1500 most frequent barcodes fasta file
 
     # write out a barcode guide to make sure I can easily
     # go back and forth between cell # and barcode sequence
     # so I can match cells between datasets.
     out = os.getcwd() + '/demuxed/bcGuide'
     guide = open(out, 'w+')
-    for k, v in bcDict.items():
-        guide.write(k + '\t' + v + '\n')
+    for k, v in bcDict.items(): #k is cellnumber and v is the 16bp barcode
+        guide.write(k + '\t' + v + '\n') #writes outfile with the cell number and barcode for the x most frequent barcodes (this is needed for Seurat)
     guide.close()
     sys.stderr.write("Finished reading BC file\n")
 
