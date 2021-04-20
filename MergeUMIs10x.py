@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('-i', '--input_path', type=str, help='This should point to the folder that contains your demultiplexed R2C2 fasta and subread (ending on _subs.fastq) files for each cell.')
 parser.add_argument('-o', '--output_path', type=str, help='Merged fasta and subread files will be written to this folder')
 parser.add_argument('-c', '--config_file', type=str, help='Same config file used for C3POa')
-parser.add_argument('-m', '--score_matrix', type=str, help='Same matrix file used for C3POa')
+#parser.add_argument('-m', '--score_matrix', type=str, help='Same matrix file used for C3POa') #I don't know what this is I can't find this in conk or any of the C3POa repos
 parser.add_argument('-t', '--threads', type=str, help='defines the number of threads the multiprocessing will use')
 
 args = parser.parse_args()
