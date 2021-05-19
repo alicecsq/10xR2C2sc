@@ -24,7 +24,7 @@ Usage:
     python3 make_seurat_input.py
         -a gencode.v29.annotation.gtf
         -b bcGuide
-        -e featureCountsOutput
+        -e featureCountsOutput #this script is assuming you have run feature counts on all of your cells together already
         -o path/to/output
 '''
 
@@ -107,7 +107,7 @@ def makeBC(inFile):
     bcOut.close()
     return numCells
 
-def modifyFC(fcIn):
+def modifyFC(fcIn): #what is the featureCounts output in this case? 
     '''
     Reads the featureCounts output and throws it into a dictionary
     countDict = {geneID: [0, 1, 0, 0, ...], ...}
@@ -116,10 +116,10 @@ def modifyFC(fcIn):
     first = True
     countDict = {}
     sys.stderr.write('Reading in the featureCounts output\n')
-    for line in open(fcIn):
-        if line.startswith('#'): # featureCounts command info
+    for line in open(fcIn): #for each line in the featurecounts file...
+        if line.startswith('#'): # featureCounts command info #ok so they are referring to the .txt output file from FeatureCounts!
             continue
-        if first: # featureCounts column names
+        if first: # featureCounts column names #next row is the column names '
             first = False
             continue
         line = line.rstrip().split('\t')
