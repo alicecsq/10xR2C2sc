@@ -2,8 +2,8 @@
 # Roger Volden
 
 '''
-Copy the cellranger output format for Seurat.
-cellranger output:
+Copy the cellranger output format for Seurat. #we will need to re-run FeatureCount on filtered cells/barcodes if we choose to go that route after Map10xUMIs.py!
+cellranger output (assuming they mean the filtered data)
     hg38/
         barcodes.tsv
         genes.tsv
@@ -11,14 +11,14 @@ cellranger output:
 
 File formats:
     barcodes.tsv
-        one barcode per line + '-1'
-    genes.tsv
+        one barcode per line + '-1'--verfied this is what this file looks like; THIS NUMBER VARIES WHEN MULTIPLEXING GEM WELLS! 
+    genes.tsv #now called FEATURES.tsv in v3.1 and is geneid \t gene name \t 'Gene Expression'(this is to account for feature barcoding in the v3.1 kit)
         gene id \t gene name
-    matrix.mtx
+    matrix.mtx #not entirely sure what this is, this is going to be the harder thing to generate probably
         %%MatrixMarket matrix coordinate real general
         %
         # genes  # cells  # of nonzero entries
-        gene index  cell index  count
+        gene index  cell index  count #this is correct according to https://kb.10xgenomics.com/hc/en-us/articles/115000794686-How-is-the-MEX-format-used-for-the-gene-barcode-matrices-
 
 Usage:
     python3 make_seurat_input.py
@@ -48,9 +48,9 @@ def argParser():
     return vars(parser.parse_args())
 
 args = argParser()
-anno = args['a']
-bcGuide = args['b']
-exp = args['e']
+anno = args['a'] #gtf annotation file
+bcGuide = args['b'] #bcGuide file of all the x most frequent barcodes found from the detBarcodes.py script
+exp = args['e'] #featurecounts output file
 outPath = args['o']
 if not outPath:
     outPath = ""
