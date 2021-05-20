@@ -36,7 +36,7 @@ def configReader(configIn):
         line = line.rstrip().split('\t') 
         progs[line[0]] = line[1] 
         
-    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'samtools','featureCount', 'psl2pslx']) #don't think I actually need psl2pslx and emtrey...
+    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'samtools','featureCounts', 'psl2pslx']) #don't think I actually need psl2pslx and emtrey...
     inConfig = set() 
     for key in progs.keys(): 
         inConfig.add(key)
@@ -59,7 +59,7 @@ minimap2 = progs['minimap2']
 racon = progs['racon']
 #consensus = progs['consensus']
 samtools = progs['samtools']
-featureCount = progs['featureCount']
+featureCounts = progs['featureCounts']
 
 
 '''Parse each cell fasta, trim barcode and UMI sequences from each read and concat into one fasta file'''
