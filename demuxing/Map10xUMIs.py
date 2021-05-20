@@ -358,18 +358,3 @@ def main(input_path, path, ref_genome, gtf_file):
 
 
 main(input_path, path, ref_genome, gtf)
-
-
-
-
-
-#group_reads(input_file,input_path, path)
-
-#eval_UMIs(input_file, path,input_path)
-
-
-#catfile=concat_fasta(input_path,path)
-#map_reads(catfile, ref_genome, path)
-
-#for line in open(catfile):
-    #print(line.strip())
