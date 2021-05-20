@@ -1,11 +1,6 @@
 #!/usr/bin/env python3
-'''Script for taking UMI-merged reads from Map10xUMIs.py, remapping thesefiltered reads with minimap2 and getting count matrix from FeatureCounts'''
+'''Script for taking UMI-merged reads from Map10xUMIs.py, remapping these filtered reads with minimap2 and getting count matrix from FeatureCounts'''
 '''dependencies: FeatureCounts, minimap2'''
-
-
-
-
-'''Add FeatureCounts and minimap2 executables to $PATH, otherwise need to put in a config file and unannotate config file fxns'''
 
 import argparse
 import editdistance
