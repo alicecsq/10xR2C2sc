@@ -90,7 +90,7 @@ def main():
 
     n = 0
     toptotal=0
-    for count in counts[:2500]:
+    for count in counts[:2500]: #manually change N most frequent barcodes here
         print('>barcode_' + str(n) + '_' + str(count[0]))
         print(count[1])
         toptotal += count[0]
