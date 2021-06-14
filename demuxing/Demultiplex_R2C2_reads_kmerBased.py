@@ -68,7 +68,7 @@ def get_kmer_list(bc):
 
 def demultiplex(reads, bcKmerDict):
     indexed_reads, counter = {}, 0
-    for read, complete_sequence in tqdm(reads.items()):
+    for read, complete_sequence in tqdm(reads.items()):  #reads.items() gives a list of a given dictionary (i.e.readDict)’s (key, value) tuple pair
         # if counter % 10000 == 0:
         #     print(str(counter) + ' of ' + str(len(reads)))
         sequence = complete_sequence[:16]
