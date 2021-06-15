@@ -86,10 +86,10 @@ def concat_fasta(input_path, path):
     #sys.stderr.write('Concatenating reads')
     final = open(path + '/allreads.fasta', 'w')
     fileList=[]
-    for file in os.listdir(input_path):
+    for file in os.listdir(input_path):  
         if '.fasta' in file:
-            fileList.append(file)
-    for file in sorted(fileList, key=lambda x: int(x.split('_')[1])):
+            fileList.append(file)       #fileList is a list containing files with '.fasta' extension in the 'input_path' directory in arbitrary order
+    for file in sorted(fileList, key=lambda x: int(x.split('_')[1])):   #sorted files in increasing number based on cell_number
         fasta_file = input_path + '/' + file
         readdict=trim(fasta_file)
         for i in readdict:
