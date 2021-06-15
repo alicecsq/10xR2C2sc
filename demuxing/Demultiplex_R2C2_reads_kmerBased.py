@@ -47,13 +47,9 @@ def read_fasta(inFile, bc):
                     else:
                         bcKmerDict[kmer].append((lastHead, readDict[lastHead]))
     if bc:
-        return bcKmerDict   #this returns a dictionary: {'GTCA___': [('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus')], 
-                            #'_GGAA__': [('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus')], 
-                            #'__CATG_': [('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus')], 
-                            #'___GTAG': [('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus'), ('ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368', 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus')],
-                            #'ACGG___': [('45e636c6-5787-412a-8b18-21af8db46b56_25.26_10379_6_562|2_310', 'ACGGTCACCGAGAACAAGGAATGTTGTTTTTTTTTTTTTTplus')...
+        return bcKmerDict   #this returns a dictionary of all possible 4-mers as individual keys, whose values are a list of tuples [('barcodename1','16bp_BC1'),('barcodename2','16bp_BC2')] with matching 4-mers
     else:
-        return readDict     #this returns a dictionary of this form: {'ba5a4220-9b2d-4280-9354-fb15bf51fb3d_11.37_4000_3_617|1_368': 'GTCAGGAACATGGTAGTTCAATTGGTTTTTTGGTTTTTTTminus', '45e636c6-5787-412a-8b18-21af8db46b56_25.26_10379_6_562|2_310': 'ACGGTCACCGAGAACAAGGAATGTTGTTTTTTTTTTTTTTplus', 'bfc184e8-bdc4-4a48-8069-cb7c537f41d2_24.25_4782_2_1333|5_1081': 'CGACTCGGTACACGGTCAGAATATTTTGTTTTTTTTTTTTminus'}
+        return readDict     #this returns a dictionary of all reads: {'readname1': 'complete_10x_sequences1', 'readname2': 'complete_10x_sequences2/ACGGTCACCGAGAACAAGGAATGTTGTTTTTTTTTTTTTTplus',...,'readname3': '10xBC/UMI_sequences'}
 
 def reverse_complement(sequence):
     bases = {'A':'T', 'C':'G', 'G':'C', 'T':'A', 'N':'N', '-':'-'}
@@ -71,26 +67,28 @@ def demultiplex(reads, bcKmerDict):
     for read, complete_sequence in tqdm(reads.items()):  #reads.items() gives a list of a given dictionary (i.e.readDict)’s (key, value) tuple pair
         # if counter % 10000 == 0:
         #     print(str(counter) + ' of ' + str(len(reads)))
-        sequence = complete_sequence[:16]
+        sequence = complete_sequence[:16]   #get the first 16bp barcode sequence from each 10x_sequences reads
 
         bc_set = set()
         readKmers = get_kmer_list(sequence)
         for kmer in readKmers:
-            if bcKmerDict.get(kmer):
-                barcodes = bcKmerDict[kmer] # list of tuples
+            if bcKmerDict.get(kmer):         #dict.get(, default_value) allows to provide a default value if the key is missing:
+                barcodes = bcKmerDict[kmer] # list of tuples (barcode_header, 16bp_barcode)
                 for b in barcodes:
-                    bc_set.add(b) # b = (header, bc sequence)
+                    bc_set.add(b) # b = (barcode_header, bc sequence) #bc_set() is a set of tuples (barcode_header, bc_sequence) containing all possible matching 16bp_cellBC (to that of this read)
         dists, bc_match, maxDist = [], '', 3
         for barcode in bc_set:
-            dist = ld.eval(barcode[1], sequence)
-            dists.append((barcode, dist))
+            dist = ld.eval(barcode[1], sequence)  #dist is a number; it is the Levenstein distance (L) between barcode[1] is the 16bp_cellBC, and sequence is the first 16bp of the 10x_BC/UMI reads 
+            dists.append((barcode, dist))         #dists is a list of the form [(('header','bc_sequence), dist)]
+                                                  #dists[0] is (('header','bc_sequence), dist)
+                                                  #dists[0][0] is ('header','bc_sequence), while dists[0][1] is 'dist'
 
         if dists:
-            sorted_bc_list = sorted(dists, key=lambda x: x[1])
+            sorted_bc_list = sorted(dists, key=lambda x: x[1])  ##sorting matched barcodes from smallest L distance to largest
 
             if sorted_bc_list[0][1] < maxDist and \
                sorted_bc_list[0][1] < sorted_bc_list[1][1]-1:
-                bc_match = sorted_bc_list[0][0][0]
+                bc_match = sorted_bc_list[0][0][0]       #sorted_bc_list[0][0][0] is the barcode_header
 
             read += '|' + bc_match
             indexed_reads[read] = complete_sequence
