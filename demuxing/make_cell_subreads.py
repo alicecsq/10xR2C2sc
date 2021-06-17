@@ -35,8 +35,8 @@ def filterSubreads(headerDict, subreads, outDir):
         line = line.rstrip()
         if not line: continue
         if lineNum % 4 == 0 and line[0] == '@':
-            if header:
-                if header in headerDict:
+            if header:    #what does this mean?
+                if header in headerDict:    #check if 'header' is a key of the 'headerDict' 
                     outSub = open(outDir + '/' + headerDict[header] + '_subs.fastq', 'a+')
                     outSub.write('@' + header + '\n')
                     outSub.write(seq + '\n+\n')
