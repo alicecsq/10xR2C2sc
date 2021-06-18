@@ -65,7 +65,7 @@ featureCounts = progs['featureCounts']
 '''Parse each cell fasta, trim barcode and UMI sequences from each read and concat into one fasta file'''
 def trim (inFile):
     readdict={}
-    filename=inFile.split('/')[1]
+    filename=inFile.split('/')[-1]
     cell=filename.split('_')[0]
     number=filename.split('_')[1]
     barcode=filename.split('_')[2]
@@ -117,17 +117,18 @@ def sam_con (inFile):
 
 
 '''Assign mapped reads to gene names with featureCount'''
-def fcount (inFile, gtf):
+def fcount (inFile, gtf, path):
     #sys.stderr.write('Getting gene assignments for mapped reads')
-    os.system('featureCounts --primary -R CORE -Q 20 -L -t exon -g gene_id -a %s -o mysample_featureCount.txt %s' %(gtf, inFile))
+    outdir = path + '/'
+    os.system('featureCounts --primary -R CORE -Q 20 -L -t exon -g gene_id -a %s -o %smysample_featureCount.txt %s' %(gtf, outdir, inFile))
 #-L denotes long-reads, -Q 20 only assigns alignments with a MAPQ score greater than 20
 
 '''Group assigned reads by cell barcode and gene assignment'''
 def group_reads (inFile, input_path, output_path):
-    if not os. path. isdir(path+'assignedreads'):
-        #shutil.rmtree(path+'assignedreads')
+    if not os. path. isdir(path + '/' + 'assignedreads'):
+        #shutil.rmtree(path + '/' + 'assignedreads')
     #else:
-        os.mkdir(path+'assignedreads')
+        os.mkdir(path + '/' + 'assignedreads')
  
     previous_cell=''
     dict={}
@@ -136,17 +137,17 @@ def group_reads (inFile, input_path, output_path):
     bcdict={}
     fullnamedict={}
     for line in open(inFile): #inFile is allreads.bam.featurecounts
-        name=line.rstrip().split('\t')[0] #full name
-        rname=name.split('_')[0]
+        name=line.rstrip().split('\t')[0] #full name containing readname(header) and cell_#_16bpBarcode
+        rname=name.split('_')[0]          #readname(header)
         if line.rstrip().split('\t')[3]!='NA'and rname not in ass_dict: #just take the primary assignment
             ass_dict[rname]=line.rstrip().split('\t')[3] #assignment dictionary at that fullname stores the gene id for that read--reads are being duplicated! Need to figure out how to fix this!
         cell=name.split('_')[2] #takes cell number from each read name (doesn't care about assignment)
         bc=name.split('_')[3] #takes the barcode from each read name (doesn't care about assignment)
-        bcdict[cell]=bc #stores barcode information under cell number in the barcode dictionary
+        bcdict[cell]=bc #stores barcode information/sequence (dict_value) under cell number(dict_key) in the barcode dictionary
         #final = open(path + '/' + cell + '.new.fasta', 'w')
         if int(line.rstrip().split('\t')[2])==1:
-            if cell!=previous_cell:
-                previous_cell=cell
+            if cell!=previous_cell:   #check if the same cell 
+                previous_cell=cell    #previous_cell is the cell number
                 dict[cell]=[]
                 bcdict[cell]=bc
                 if name not in dict.get(cell): #my clumsy way of preventing read duplicates and taking the first gene_id in featurecounts (could be better)
@@ -154,16 +155,18 @@ def group_reads (inFile, input_path, output_path):
             else:
                 if name not in dict.get(cell):
                     dict[cell].append(name)
-                    #dict stores the cell number and then all the reads that had gene assignments
+                    #dict stores the cell number (dict_key) and then all the reads that had gene assignments (in a list) (dict_value)
     dictlength=int(cell) #dictionary has as many entries as the last cell counted that had gene assignments (some cells don't have gene assignments)
-    for i in range(dictlength+1):
+    for i in range(dictlength+1): #line160-163 is for cells that do not have gene assignments
         i=str(i)
         if i not in dict:
             dict[i]=[] #for cells without gene assignments make those cells empty lists in the dict
     for i in range(len(dict)):
         readlist=[]
         i=str(i)
-        barcode=bcdict[i] #attach barcode info to cell
+        barcode=bcdict[i] #attach barcode info to cell 
+        if os.exists(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta'):
+            os.remove(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta')
         final = open(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta', 'w') #open file with cell number and barcode
         file=input_path+'/'+'cell_'+i+'_'+barcode+'.fasta'
         seqdict={} 
@@ -185,9 +188,12 @@ def group_reads (inFile, input_path, output_path):
             final.write('%s\t%s\t%s\n' % (name,ass,seq))
         final.close()
     for file in os.listdir(path+'/assignedreads'):
-        fileList.append(file)
+        if file.endswith('new.fasta'):
+            fileList.append(file)
     for file in sorted(fileList, key=lambda x: int(x.split('_')[1])): #creates cell_#_BC.fasta.new.sorted file with reads sorted by gene_id
         with open(path+'/assignedreads/'+file)as open_file:
+            if os.exists(path + '/assignedreads/'+ file +'.sorted'):
+                os.remove(path + '/assignedreads/'+ file +'.sorted')
             sorted_file=open(path + '/assignedreads/'+ file +'.sorted', 'w')
             rows=open_file.readlines()
             sorted_rows = sorted(rows, key=lambda x: int(x.split()[1][7:]), reverse=False)
@@ -198,13 +204,13 @@ def group_reads (inFile, input_path, output_path):
 def eval_UMIs(path, input_path):
     fileList=[] 
     for file in os.listdir(path+'/assignedreads/'):
-        if '.sorted' in file :
+        if file.endswith('.new.fasta.sorted'):
             fileList.append(file)
     for file in sorted(fileList, key=lambda x: int(x.split('_')[1])): 
-        cell=file.split('_')[1]
-        barcode=(file.split('_')[2]).split('.')[0]
-        #if os.exists(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta'):
-            #os.remove(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta')
+        cell=file.split('_')[1]  #cell is the cell number
+        barcode=(file.split('_')[2]).split('.')[0]   #barcode is the 16bp barcode sequence
+        if os.exists(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta'):
+            os.remove(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta')
         finalfasta = open(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta', 'a') #if you already have this file it will be APPENDED so if you are doing this more than once be mindful
         genedict={}
         previous_gene=''
