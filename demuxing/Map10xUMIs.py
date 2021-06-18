@@ -67,7 +67,7 @@ def trim (inFile):
     readdict={}
     cell=inFile.split('_')[0]
     number=inFile.split('_')[1]
-    barcode=inFile.split('_')[2]
+    barcode=(inFile.split('_')[2]).split('.')[0]
     bc=barcode.split('.')[0]
     for line in open(inFile):
         if line.startswith('>'):
