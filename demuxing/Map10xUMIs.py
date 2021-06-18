@@ -65,10 +65,9 @@ featureCounts = progs['featureCounts']
 '''Parse each cell fasta, trim barcode and UMI sequences from each read and concat into one fasta file'''
 def trim (inFile):
     readdict={}
-    filename=inFile.split('/')[-1]
-    cell=filename.split('_')[0]
-    number=filename.split('_')[1]
-    barcode=filename.split('_')[2]
+    cell=inFile.split('_')[0]
+    number=inFile.split('_')[1]
+    barcode=inFile.split('_')[2]
     bc=barcode.split('.')[0]
     for line in open(inFile):
         if line.startswith('>'):
