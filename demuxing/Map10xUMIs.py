@@ -357,7 +357,7 @@ def main(input_path, path, ref_genome, gtf_file):
     samfile=map_reads(catfile, ref_genome, path)
     sam_con(samfile)
     bamfile=path+'/'+'allreads.bam' 
-    fcount(bamfile, gtf)
+    fcount(bamfile, gtf,path)
     countfile=path+'/'+'allreads.bam.featureCounts'
     group_reads(countfile,input_path, path)
     eval_UMIs(path,input_path)
