@@ -165,7 +165,7 @@ def group_reads (inFile, input_path, output_path):
         readlist=[]
         i=str(i)
         barcode=bcdict[i] #attach barcode info to cell 
-        if os.exists(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta'):
+        if os.path.exists(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta'):
             os.remove(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta')
         final = open(path + '/assignedreads' + '/'+'cell_'+ i + '_'+barcode+'.new.fasta', 'w') #open file with cell number and barcode
         file=input_path+'/'+'cell_'+i+'_'+barcode+'.fasta'
@@ -192,7 +192,7 @@ def group_reads (inFile, input_path, output_path):
             fileList.append(file)
     for file in sorted(fileList, key=lambda x: int(x.split('_')[1])): #creates cell_#_BC.fasta.new.sorted file with reads sorted by gene_id
         with open(path+'/assignedreads/'+file)as open_file:
-            if os.exists(path + '/assignedreads/'+ file +'.sorted'):
+            if os.path.exists(path + '/assignedreads/'+ file +'.sorted'):
                 os.remove(path + '/assignedreads/'+ file +'.sorted')
             sorted_file=open(path + '/assignedreads/'+ file +'.sorted', 'w')
             rows=open_file.readlines()
@@ -209,8 +209,8 @@ def eval_UMIs(path, input_path):
     for file in sorted(fileList, key=lambda x: int(x.split('_')[1])): 
         cell=file.split('_')[1]  #cell is the cell number
         barcode=(file.split('_')[2]).split('.')[0]   #barcode is the 16bp barcode sequence
-        if os.exists(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta'):
-            os.remove(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta')
+        if os.path.exists(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta'):
+            os.path.remove(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta')
         finalfasta = open(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta', 'a') #if you already have this file it will be APPENDED so if you are doing this more than once be mindful
         genedict={}
         previous_gene=''
