@@ -36,7 +36,7 @@ def configReader(configIn):
         line = line.rstrip().split('\t') 
         progs[line[0]] = line[1] 
         
-    possible = set(['poa', 'minimap2', 'gonk', 'consensus', 'racon', 'samtools','featureCounts', 'psl2pslx']) #don't think I actually need psl2pslx and emtrey...
+    possible = set(['minimap2', 'conk', 'consensus', 'racon', 'samtools','featureCounts']) #don't think I actually need psl2pslx and emtrey...
     inConfig = set() 
     for key in progs.keys(): 
         inConfig.add(key)
