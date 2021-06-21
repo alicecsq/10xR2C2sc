@@ -199,7 +199,7 @@ def eval_UMIs(input_file, path, input_path):
     for file in sorted(fileList, key=lambda x: int(x.split('_')[1])): 
         cell=file.split('_')[1]
         barcode=(file.split('_')[2]).split('.')[0]
-        finalfasta = open(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta', 'w')
+        finalfasta = open(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta', 'a')
         genedict={}
         previous_gene=''
 
