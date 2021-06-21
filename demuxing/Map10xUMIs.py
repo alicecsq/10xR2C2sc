@@ -45,7 +45,7 @@ def configReader(configIn):
 
     for missing in possible-inConfig: 
         if missing == 'consensus': 
-            path = 'consensus.py' 
+            path = 'consensus.py' #change this to where 'consensus.py is located in your computer' 
         else:
             path = missing  
         progs[missing] = path 
