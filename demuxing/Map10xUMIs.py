@@ -231,6 +231,7 @@ def eval_UMIs(path, input_path):
                 genedict[gene].append(name)
                 genedict[gene].append(sequence)
                 genedict[gene].append(UMI) #creates genedict that has gene_id keys storing the names, seqs, and UMIs of associated reads (in that order)
+        #genedict{} stores contents of 'new.fasta.sorted'; key is 'gene_id', values as ['readname1','seq1','UMI1'(,'readname2','seq2','UMI2'...)]
         for key,value in genedict.items(): #key is referring to gene id
             length=len(list(filter(None, value)))
             if length < 6: #if there is only one read for this gene in the cell...
