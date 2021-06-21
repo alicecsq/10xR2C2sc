@@ -211,7 +211,7 @@ def eval_UMIs(path, input_path):
         barcode=(file.split('_')[2]).split('.')[0]   #barcode is the 16bp barcode sequence
         if os.path.exists(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta'):
             os.remove(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta')
-        finalfasta = open(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta', 'a') #if you already have this file it will be APPENDED so if you are doing this more than once be mindful
+        finalfasta = open(input_path + '/'+'cell_'+ cell + '_'+barcode+'.final.fasta', 'w') #if you already have this file it will be APPENDED so if you are doing this more than once be mindful
         genedict={}
         previous_gene=''
 
