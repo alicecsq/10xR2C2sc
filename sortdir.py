@@ -22,7 +22,7 @@ path=args.output_path
 #ref_genome=args.ref_genome
 #gtf=args.gtf_file
 
-def sort_files(input_path):
+def sort_files(input_path,path):
     fileList=[]
     for file in os.listdir(input_path):
         fileList.append(file)
@@ -52,4 +52,6 @@ def sort_files(input_path):
             shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
         i += 1 
 
-sort_files(input_path)
+if os. path. isdir(path+'/cellsamssorted'):
+  os.mkdir(path+'/cellsamssorted')
+sort_files(input_path,path)
