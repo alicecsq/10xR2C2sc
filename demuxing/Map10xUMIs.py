@@ -296,7 +296,7 @@ def eval_UMIs(path, input_path):
 
 '''Determines which read in the group has most subreads, aligns all fastqs to that read with minimap and polishes with racon'''
 def make_consensus(group, path, input_path, cell, barcode):
-    previoussub=0
+    previoussub=-1
     if os.path.exists('targettemp.fasta'): #make temp target fasta for each batch of reads to be aligned and polished
         os.remove('targettemp.fasta')
     if os.path.exists('querytemp.fastq'):
