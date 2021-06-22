@@ -304,7 +304,7 @@ def make_consensus(group, path, input_path, cell, barcode):
     targetFa = open(path+'/targettemp.fasta', 'w') #make temp fasta for consensus fasta with most subreads, will be contig for align and correct 
     queryFq = open(path+'/querytemp.fastq','a') #make temp fastq file for query sequences
     for key in group:
-        subreads=int(key.split('_')[3])
+        subreads=int(key.split('_')[3])  #this determines the number of subreads in each fastq read 
         if subreads > previoussub:
             previoussub=subreads
             best=key
