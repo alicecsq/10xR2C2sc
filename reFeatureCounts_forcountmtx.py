@@ -17,13 +17,14 @@ parser.add_argument('-p', '--input_path', type=str) #path to individual cell .fi
 parser.add_argument('-o', '--output_path', type=str) #where you want 'cellsams' directory to go 
 parser.add_argument('-c', '--config_file', type=str) #config file containing paths to executables if not in $PATH
 parser.add_argument('-r', '--ref_genome', type=str) #reference GENOME for minimap2 alignment (same used for Map10xUMIs.py)
-
+parser.add_argument('-t', '--minimap2_threads', type=str, default='4', help='Number of threads to use when running minimap (default 4)')
 
 args = parser.parse_args()
 input_path=args.input_path
 path=args.output_path
 config_file=args.config_file
 ref_genome=args.ref_genome
+minimap2_threads = args.minimap2_threads
 
 '''Parse config'''
 def configReader(configIn):
@@ -80,7 +81,7 @@ def trim (inFile):
 def map_reads(name,inFile,ref_genome,path):
     #sys.stderr.write('Mapping reads to %s' %(ref_fasta))
     out= path + '/cellsams/'+ name +'.sam'
-    os.system('%s --secondary=no -ax splice %s %s > %s' % (minimap2, ref_genome, inFile, out))
+    os.system('%s --secondary=no -ax splice -t %s %s %s > %s' % (minimap2, minimap2_threads, ref_genome, inFile, out))
     #return out
 
 def concat_fasta(input_path, path, ref_genome):
