@@ -37,19 +37,19 @@ def sort_files(input_path,path):
         if i==len(fileList):
             break
         elif i < 10:
-            shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
+            shutil.copyfile(input_path+sam,path+'/'+'cell_'+('0'*zeroes)+cellnum+'.sam')
         elif i >=10 and i < 100:
             zeroes=(len(str(int(len(fileList)/10))))-1
-            shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
+            shutil.copyfile(input_path+sam,path+'/'+'cell_'+('0'*zeroes)+cellnum+'.sam')
         elif i >= 100 and i < 1000:
             zeroes=(len(str(int(len(fileList)/10))))-2
-            shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
+            shutil.copyfile(input_path+sam,path+'/'+'cell_'+('0'*zeroes)+cellnum+'.sam')
         elif i >= 1000 and i < 10000:
             zeroes=(len(str(int(len(fileList)/10))))-3
-            shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
+            shutil.copyfile(input_path+sam,path+'/'+'cell_'+('0'*zeroes)+cellnum+'.sam')
         elif i >= 10000 and i < 100000:
             zeroes=(len(str(int(len(fileList)/10))))-4
-            shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
+            shutil.copyfile(input_path+sam,path+'/'+'cell_'+('0'*zeroes)+cellnum+'.sam')
         i += 1 
 
 if os. path. isdir(path+'/cellsamssorted'):
