@@ -52,6 +52,6 @@ def sort_files(input_path,path):
             shutil.copyfile(input_path+sam,path+'cell_'+('0'*zeroes)+cellnum+'.sam')
         i += 1 
 
-if os. path. isdir(path+'/cellsamssorted'):
-  os.mkdir(path+'/cellsamssorted')
+if not os. path. isdir(path+'cellsamssorted'):
+  os.mkdir(path+'cellsamssorted')
 sort_files(input_path,path)
